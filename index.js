@@ -70,7 +70,7 @@ const gitStash = async (target) => {
 
 program.command('git')
 .option('-ps, --push', 'use git push')
-.argument('[args...]', 'string to split')
+.argument('[args...]', 'args')
 .option('-mgt, --merge', 'use git push')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
@@ -90,15 +90,11 @@ program.command('git')
     console.log(options.push, options.merge, args, options.stash);
 })
 
+program.command('run')
+.argument('[args...]', 'args')
+.action(async (args, options) => {
+    await processExec('export NODE_OPTIONS=--openssl-legacy-provider && npm run ' + args.join(' '));
+})
 
-program.command('split')
-  .description('Split a string into substrings and display as an array')
-  .argument('<string>', 'string to split')
-  .option('--first', 'display just the first substring')
-  .option('-s, --separator <char>', 'separator character', ',')
-  .action((str, options) => {
-    const limit = options.first ? 1 : undefined;
-    console.log(str.split(options.separator, limit));
-  });
 
 program.parse();
