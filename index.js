@@ -47,7 +47,7 @@ const gitMerge = async (target, current) => {
     await processExec('git push');
     await processExec('git checkout' + current);
 }
-
+//
 const gitStash = async (target) => {
     await processExec('git add .');
     await processExec('git stash');
