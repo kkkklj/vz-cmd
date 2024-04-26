@@ -23,20 +23,21 @@ program
 const gitPush = async (commit, addList = ['.']) => {
     if (!Regexps.GITNORMS.test(commit)) {
         console.log(chalk.bold.red('err: git commit 不符合开发规范'));
-        console.log(chalk.bold.green('type 参考如下,注意空格'));
-        console.log(chalk.bold.green('feat: 新功能（feature）'));
-        console.log(chalk.bold.green('fix: 修补bug'));
-        console.log(chalk.bold.green('docs: 文档（documentation）'));
-        console.log(chalk.bold.green('style: 格式（不影响代码运行的变动）'));
-        console.log(chalk.bold.green('refactor: 重构（即不是新增功能，也不是修改bug的代码变动）'));
-        console.log(chalk.bold.green('test: 增加测试'));
-        console.log(chalk.bold.green('chore: 构建过程或辅助工具的变动'));
+        console.log(chalk.bold.yellow('type 参考如下,注意空格'));
+        console.log(chalk.bold.blue('feat: 新功能（feature）'));
+        console.log(chalk.bold.blue('fix: 修补bug'));
+        console.log(chalk.bold.black('docs: 文档（documentation）'));
+        console.log(chalk.bold.black('style: 格式（不影响代码运行的变动）'));
+        console.log(chalk.bold.black('refactor: 重构（即不是新增功能，也不是修改bug的代码变动）'));
+        console.log(chalk.bold.black('test: 增加测试'));
+        console.log(chalk.bold.black('chore: 构建过程或辅助工具的变动'));
         return '规范错误'
     }
     await processExec('git add ' + addList.join(' '));
     await processExec(`git commit -m "${commit}"`);
     await processExec('git pull');
     await processExec('git push');
+    console.log(chalk.bold.green('提交成功:commit=' + commit));
 }
 
 async function getGitBranch() {
