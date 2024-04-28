@@ -12,7 +12,7 @@ vz git [options] [args...]
     - args：目标分支
 - -mgt(--mergeto)：将当前分支合并到其他分支
     - args: 目标分支，可有多个
-
+ 
 例子
 ```shell
 # -ps 推送所有更改
