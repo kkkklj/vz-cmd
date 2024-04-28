@@ -5,6 +5,8 @@ import _process from "child_process"
 import {$} from 'execa';
 import {Regexps} from './config.js'
 import * as utils from './utils.js'
+import path from "path";
+import { copyFileSync, writeFileSync } from 'fs';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -111,14 +113,45 @@ program.command('git')
         utils.commandDesc('本地代码迁移\n目标分支为:\n'+ targetBranch);
         gitStash(targetBranch)
     }
-    console.log(options.push, options.merge, args, options.stash, options);
+    // console.log(options.push, options.merge, args, options.stash, options);
 })
 
-program.command('run')
+
+
+const getFileList = async () => {
+    const ls = await $`ls`;
+    return ls.stdout.split('\n')
+}
+
+
+program.command('ls')
 .argument('[args...]', 'args')
+.option('-f, --filter','过滤文件',)//根据当前目录的配置文件
+.option('-m, --match', '匹配文件')//根据input
+.option('-c, --copy', '复制文件')
+.option('-o, --output', '输出为js')
 .action(async (args, options) => {
-    await processExec('export NODE_OPTIONS=--openssl-legacy-provider && npm run ' + args.join(' '));
+    console.log('options-->',options)
+    let regular;
+    let list = await getFileList();
+    if (options.match) {
+        regular = RegExp(args[0]);
+        list = list.filter(i => regular.test(i));
+    }
+    if (options.copy) {
+        list.forEach(name => {
+            copyFileSync(`./${name}`, args[1] + '/' + name);
+        })
+    }
+    if (options.output) {
+        const str = JSON.stringify(list)
+        .replace(/^\[/,'[\n  ')
+        .replace(/\]$/,'\n]')
+        .replaceAll(/(?<=(\"|\'))\,(?=(\"|\'))/g,",\n  ")
+        const cont = `const arr = ${str}`;
+        writeFileSync(`./output-${new Date().getTime()}.js`, cont);
+    }
+    // console.log('match->', list.filter(i => regular.test(i)));
 })
-
 
 program.parse();
