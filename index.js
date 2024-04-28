@@ -44,9 +44,9 @@ const gitPush = async (commit, addList) => {
     if (!gitAdd) {
         console.log(chalk.blue('执行add提示: 暂存区无文件'))
     } else {
-        
+        await processExec(`git commit -m "${commit}"`);
     }
-    await processExec(`git commit -m "${commit}"`);
+    
     await processExec('git pull');
     await processExec('git push');
     console.log(chalk.bold.green('提交成功:commit=' + commit));
