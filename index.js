@@ -81,7 +81,14 @@ program.command('git')
     if(options.push) {
         
         const [commit, ...addList] = args;
-        utils.commandDesc('代码推送，commit内容为:\n'+ commit + `\n添加内容为:\n${addList.join('\n')}`);
+        const isAll = '所有文件'
+        const addContents = addList.length > 1 
+        ? addList.join('\n') 
+        : (!addList.length || addList [0] === '.')
+        ? isAll
+        : addList[0];
+        
+        utils.commandDesc('代码推送\ncommit内容为:\n'+ commit + `\n添加内容为:\n${addContents}`);
         gitPush(commit, [...addList])
     }
     if(options.merge) {
