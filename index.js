@@ -88,7 +88,8 @@ program.command('git')
         ? isAll
         : addList[0];
         
-        utils.commandDesc('代码推送\ncommit为:\n'+ commit + `\n添加文件有:\n${addContents}`);
+        utils.commandDesc('代码推送\ncommit为:\n'+ commit);
+        console.log(chalk.bold.green(`添加文件有:\n${addContents}`))
         gitPush(commit, [...addList])
     }
     if(options.merge) {
