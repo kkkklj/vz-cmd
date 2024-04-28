@@ -78,11 +78,12 @@ const gitStash = async (target) => {
 program.command('git')
 .option('-ps, --push', 'use git push')
 .argument('[args...]', 'args')
-.option('-mgt, --merge', 'use git push')
+.option('-mgt, --mergeto', 'use git push')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
-    const push = () => {
-        
+    if (!Object.keys(options).length) {
+        console.log(chalk.red('缺少必填选项'));
+        return
     }
     if(options.push) {
         const [commit, ...addList] = args;
