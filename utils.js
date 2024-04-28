@@ -4,4 +4,4 @@ export const exec = (commands) => {
     // todo
 }
 
-export const commandDesc = str => chalk.bold.blue(str)
+export const commandDesc = str => console.log(chalk.bold.blue(str))
