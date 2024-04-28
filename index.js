@@ -41,8 +41,11 @@ const gitPush = async (commit, addList) => {
     }
     await processExec('git add ' + addList.join(' '));
     const gitAdd = (await $`git diff --staged`).stdout;
-    console.log('gitadd-->', gitAdd)
-    await processExec(`git commit -m "${commit}"`);
+    if (!gitAdd) {
+        await processExec(`git commit -m "${commit}"`);
+    } else {
+        console.log(chalk.blue('执行add提示: 暂存区无文件'))
+    }
     await processExec('git pull');
     await processExec('git push');
     console.log(chalk.bold.green('提交成功:commit=' + commit));
