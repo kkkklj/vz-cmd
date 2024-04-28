@@ -4,6 +4,7 @@ import {Command} from 'commander'
 import _process from "child_process"
 import {$} from 'execa';
 import {Regexps} from './config.js'
+import * as utils from './utils.js'
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -20,7 +21,10 @@ program
   .version('0.0.1')
   .description('A cli application named pro');
 
-const gitPush = async (commit, addList = ['.']) => {
+const gitPush = async (commit, addList) => {
+    if (!addList || !addList.length) {
+        addList = ['.']
+    }
     if (!Regexps.GITNORMS.test(commit)) {
         console.log(chalk.bold.red('err: git commit 不符合开发规范'));
         console.log(chalk.bold.yellow('type 参考如下,注意空格'));
@@ -58,7 +62,7 @@ const gitMerge = async (target, current) => {
     await processExec('git pull');
     await processExec('git merge ' + current);
     await processExec('git push');
-    await processExec('git checkout' + current);
+    await processExec('git checkout ' + current);
 }
 //
 const gitStash = async (target) => {
@@ -75,7 +79,9 @@ program.command('git')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
     if(options.push) {
+        
         const [commit, ...addList] = args;
+        utils.commandDesc('代码推送，commit内容为:\n'+ commit + `\n添加内容为:\n${addList.join('\n')}`);
         gitPush(commit, [...addList])
     }
     if(options.merge) {
