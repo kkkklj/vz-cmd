@@ -40,8 +40,8 @@ const gitPush = async (commit, addList) => {
         return '规范错误'
     }
     await processExec('git add ' + addList.join(' '));
-    const gitAdd = $`git diff --staged`.stdout;
-    console.log('gitadd-->', gitAdd)
+    const gitAdd = await $`git diff --staged`;
+    console.log('gitadd-->', gitAdd.stdout)
     await processExec(`git commit -m "${commit}"`);
     await processExec('git pull');
     await processExec('git push');
