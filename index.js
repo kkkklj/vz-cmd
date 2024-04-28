@@ -58,11 +58,14 @@ async function getGitBranch() {
 }
 
 const gitMerge = async (target, current) => {
-    await processExec('git checkout ' + target);
-    await processExec('git pull');
-    await processExec('git merge ' + current);
-    await processExec('git push');
-    await processExec('git checkout ' + current);
+    const exec = utils.exec;
+    await exec([
+        'git checkout ' + target,
+        'git pull',
+        'git merge ' + current,
+        'git push',
+        'git checkout ' + current
+    ])
 }
 //
 const gitStash = async (target) => {
@@ -78,8 +81,10 @@ program.command('git')
 .option('-mgt, --merge', 'use git push')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
-    if(options.push) {
+    const push = () => {
         
+    }
+    if(options.push) {
         const [commit, ...addList] = args;
         const isAll = '所有文件'
         const addContents = addList.length > 1 
@@ -87,21 +92,25 @@ program.command('git')
         : (!addList.length || addList [0] === '.')
         ? isAll
         : addList[0];
-        
         utils.commandDesc('代码推送\ncommit为:\n'+ commit);
         console.log(chalk.bold.green(`添加文件有:\n${addContents}`))
         gitPush(commit, [...addList])
     }
     if(options.merge) {
-        const targetBranch = args[0];
-        const currentBranch = await getGitBranch();
-        gitMerge(targetBranch, currentBranch)
+        for (let index = 0; index < args.length; index++) {
+            const targetBranch = args[index];
+            utils.commandDesc('代码合并并推送\n目标分支为:\n'+ targetBranch);
+            const currentBranch = await getGitBranch();
+            await gitMerge(targetBranch, currentBranch)
+        }
+        
     }
     if(options.stash) {
         const targetBranch = args[0];
+        utils.commandDesc('本地代码迁移\n目标分支为:\n'+ targetBranch);
         gitStash(targetBranch)
     }
-    console.log(options.push, options.merge, args, options.stash);
+    console.log(options.push, options.merge, args, options.stash, options);
 })
 
 program.command('run')
