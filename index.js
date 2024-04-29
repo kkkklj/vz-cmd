@@ -72,7 +72,7 @@ const gitMerge = async (target, current) => {
         'git pull',
         {
             exec: 'git merge ' + current,
-            before: async () => {
+            after: async () => {
                 const conflic = (await $`git branch --no-merged`).stdout;
                 if(conflic) {
                     return Promise.reject('存在冲突')
