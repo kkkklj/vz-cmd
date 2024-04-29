@@ -51,7 +51,7 @@ const gitPush = async (commit, addList) => {
     await processExec('git push');
     console.log(chalk.bold.green('提交成功'));
 }
-
+// main
 async function getGitBranch() {
     const _version = await $`git --version`;
     const _v = _version.stdout;
