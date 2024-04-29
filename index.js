@@ -75,6 +75,7 @@ const gitMerge = async (target, current) => {
             after: async () => {
                 const conflic = (await $`git branch --no-merged`).stdout;
                 if(conflic) {
+                    console.log(chalk.red('存在冲突!!'))
                     return Promise.reject('存在冲突')
                 }
             }
