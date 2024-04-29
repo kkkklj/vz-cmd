@@ -5,7 +5,6 @@ import _process from "child_process"
 import {$} from 'execa';
 import {Regexps, api} from './config.js'
 import * as utils from './utils/utils.js'
-import path from "path";
 import request from './utils/request.js'
 import { copyFileSync, createReadStream, createWriteStream, statSync, writeFileSync } from 'fs';
 const processExec = (cmd) => {
@@ -74,7 +73,6 @@ const gitMerge = async (target, current) => {
         {
             exec: 'git merge ' + current,
             before: () => new Promise((resolve) => {
-                console.log('before-->')
                 resolve(1)
             })
         },
@@ -164,6 +162,7 @@ program.command('ls')
     }
 })
 
+
 program.command('tiny')
 .argument('[imgList...]','图片列表')
 .option('-w, --wait <time>')
@@ -171,8 +170,6 @@ program.command('tiny')
     console.log(imgList,options)
     const waittime = Number(options.wait) || 0;
     const list = (await utils.getFileList(imgList)).filter(i => Regexps.IMG.test(i));
-    // console.log('list-->',list)
-    // return
     function getKb(byte) {
         return (byte / 1024).toFixed(1) + 'k'
     }
