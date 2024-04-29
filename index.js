@@ -3,10 +3,11 @@ import chalk from 'chalk';
 import {Command} from 'commander'
 import _process from "child_process"
 import {$} from 'execa';
-import {Regexps} from './config.js'
-import * as utils from './utils.js'
+import {Regexps, api} from './config.js'
+import * as utils from './utils/utils.js'
 import path from "path";
-import { copyFileSync, writeFileSync } from 'fs';
+import request from './utils/request.js'
+import { copyFileSync, createReadStream, createWriteStream, statSync, writeFileSync } from 'fs';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -89,6 +90,7 @@ program.command('git')
 .option('-mgt, --mergeto', 'use git push')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
+    console.log(options)
     if (!Object.keys(options).length) {
         console.log(chalk.red('缺少必填选项'));
         return
@@ -105,12 +107,12 @@ program.command('git')
         console.log(chalk.bold.green(`添加文件有:\n${addContents}`))
         gitPush(commit, [...addList])
     }
-    if(options.merge) {
+    if(options.mergeto) {
+        const currentBranch = await getGitBranch();
         for (let index = 0; index < args.length; index++) {
             const targetBranch = args[index];
             utils.commandDesc('代码合并并推送\n目标分支为:\n'+ targetBranch);
-            const currentBranch = await getGitBranch();
-            await gitMerge(targetBranch, currentBranch)
+            await gitMerge(targetBranch, currentBranch);
         }
         
     }
@@ -124,10 +126,6 @@ program.command('git')
 
 
 
-const getFileList = async () => {
-    const ls = await $`ls`;
-    return ls.stdout.split('\n')
-}
 
 
 program.command('ls')
@@ -137,9 +135,8 @@ program.command('ls')
 .option('-c, --copy', '复制文件')
 .option('-o, --output', '输出为js')
 .action(async (args, options) => {
-    console.log('options-->',options)
     let regular;
-    let list = await getFileList();
+    let list = await utils.getFileList();
     if (options.match) {
         regular = RegExp(args[0]);
         list = list.filter(i => regular.test(i));
@@ -157,7 +154,67 @@ program.command('ls')
         const cont = `const arr = ${str}`;
         writeFileSync(`./output-${new Date().getTime()}.js`, cont);
     }
-    // console.log('match->', list.filter(i => regular.test(i)));
 })
+
+program.command('tiny')
+.argument('[imgList...]','图片列表')
+.option('-w, --wait <time>')
+.action(async (imgList,options) => {
+    console.log(imgList,options)
+    const waittime = Number(options.wait) || 0;
+    const list = (await utils.getFileList(imgList)).filter(i => Regexps.IMG.test(i));
+    // console.log('list-->',list)
+    // return
+    function getKb(byte) {
+        return (byte / 1024).toFixed(1) + 'k'
+    }
+    const headers = {
+        "referer": "https://tinypng.com/",
+        "user-agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36',
+    }
+    list.forEach((file) => {
+        const _rawSize = statSync(file).size;
+        let diff;
+        let percent;
+        request.post(api.TINY, createReadStream(file), {
+            headers, responseType: 'json',
+            useLimit: 1,
+            waittime
+        })
+        .then(response => {
+            let body = response.data;
+            let op = body.output;
+            if (!op || !op.url) {
+                console.log(chalk.red(`\u2718  Something bad happend of compressing \`${file} \`: ` + body.message));
+                return Promise.reject(body.message)
+            }
+            diff = _rawSize - op.size;
+            percent = diff / _rawSize * 100;
+            if (percent < 1) {
+                console.log(chalk.yellow('\u2718 Couldn’t compress `' + file + '` any further'));
+                return Promise.reject('warn');
+            } else {
+                return request.get(op.url, { responseType: 'stream' })
+            }
+        })
+        .then(response => {
+            const writer = createWriteStream(file);
+            response.data.pipe(writer);
+            writer.on('close', () => {
+                console.log(chalk.green('\u2714 Saved ' + getKb(diff) + ' (' + percent.toFixed(2) + '%) for `' + chalk.bold(file) + '`'));
+            });
+            writer.on('error', error => {
+                console.log(chalk.red('Error occurred while saving the compressed file: ' + error));
+            });
+        })
+        .catch(error => {
+            if (error === 'warn') {
+                return
+            }
+            console.log(chalk.red('Error occurred while compressing the file: ' + error));
+        })
+    })
+})
+
 
 program.parse();
