@@ -72,9 +72,12 @@ const gitMerge = async (target, current) => {
         'git pull',
         {
             exec: 'git merge ' + current,
-            before: () => new Promise((resolve) => {
-                resolve(1)
-            })
+            before: async () => {
+                const conflic = (await $`git branch --no-merged`).stdout;
+                if(conflic) {
+                    return Promise.reject('存在冲突')
+                }
+            }
         },
         'git push',
         'git checkout ' + current
@@ -161,6 +164,7 @@ program.command('ls')
         writeFileSync(`./output-${new Date().getTime()}.js`, cont);
     }
 })
+// test 1
 
 
 program.command('tiny')
