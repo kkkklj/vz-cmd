@@ -82,7 +82,7 @@ const gitMerge = async (target, current) => {
         },
         'git push',
         'git checkout ' + current
-    ]).catch(e => console.log(chalk.red(e)))
+    ]).catch(e => console.log(chalk.red('err:',e)))
 }
 
 //
