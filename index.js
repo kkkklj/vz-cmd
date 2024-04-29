@@ -82,6 +82,7 @@ const gitMerge = async (target, current) => {
         'git checkout ' + current
     ])
 }
+
 //
 const gitStash = async (target) => {
     await processExec('git add .');
