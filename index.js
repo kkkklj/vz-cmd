@@ -64,7 +64,7 @@ async function getGitBranch() {
     const branch = await $`git branch --show-current`;
     return branch.stdout;
 }
-
+// main
 const gitMerge = async (target, current) => {
     const exec = utils.exec;
     await exec([
