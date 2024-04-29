@@ -131,21 +131,22 @@ program.command('git')
 program.command('ls')
 .argument('[args...]', 'args')
 .option('-f, --filter','过滤文件',)//根据当前目录的配置文件
-.option('-m, --match', '匹配文件')//根据input
+.option('-m, --match <regexp>', '匹配文件')//根据input
 .option('-c, --copy', '复制文件')
 .option('-o, --output', '输出为js')
 .action(async (args, options) => {
     let regular;
     let list = await utils.getFileList();
     if (options.match) {
-        regular = RegExp(args[0]);
+        regular = RegExp(options.match);
         list = list.filter(i => regular.test(i));
     }
     if (options.copy) {
         list.forEach(name => {
-            copyFileSync(`./${name}`, args[1] + '/' + name);
+            copyFileSync(`./${name}`, args[0] + '/' + name);
         })
     }
+    console.log(chalk.greenBright('最终查询到的文件为:\n',list.join('\n')))
     if (options.output) {
         const str = JSON.stringify(list)
         .replace(/^\[/,'[\n  ')

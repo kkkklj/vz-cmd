@@ -38,7 +38,9 @@ vz ls [-mco] [args...]
 
 ```shell
 # 查找蓝湖导出所有图片中的二倍图，并放到当前目录下的file文件夹
-vz ls -mc "2x\\.(png|jpg)" file
+vz ls -m"2x\\.(png|jpg)" -c file
+# 或者
+vz ls --match="2x\\.(png|jpg)" -c file
 ```
 
 ### tiny 命令
