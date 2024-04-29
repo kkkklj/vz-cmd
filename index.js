@@ -163,7 +163,7 @@ program.command('ls')
         writeFileSync(`./output-${new Date().getTime()}.js`, cont);
     }
 })
-
+// test 1
 program.command('tiny')
 .argument('[imgList...]','图片列表')
 .option('-w, --wait <time>')
