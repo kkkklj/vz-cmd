@@ -50,7 +50,7 @@ const gitPush = async (commit, addList) => {
     
     await processExec('git pull');
     await processExec('git push');
-    console.log(chalk.bold.green('提交成功:commit=' + commit));
+    console.log(chalk.bold.green('提交成功'));
 }
 
 async function getGitBranch() {
@@ -71,7 +71,13 @@ const gitMerge = async (target, current) => {
     await exec([
         'git checkout ' + target,
         'git pull',
-        'git merge ' + current,
+        {
+            exec: 'git merge ' + current,
+            before: () => new Promise((resolve) => {
+                console.log('before-->')
+                resolve(1)
+            })
+        },
         'git push',
         'git checkout ' + current
     ])

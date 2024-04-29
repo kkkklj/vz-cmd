@@ -28,7 +28,13 @@ export const exec = async (commands) => {
     })
     for (let index = 0; index < list.length; index++) {
         const item = list[index];
+        if (item.before) {
+            await item.before()
+        }
         await processExec(item.exec);
+        if (item.after) {
+            await item.after();
+        }
     }
 }
 
