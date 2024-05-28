@@ -47,7 +47,7 @@ export const getFileList = async (names) => {
     if(!names || !names.length) {
         names = ['.'];
     }
-    const cmd = `ls ${names.join(' ')}`
+    const cmd = `ls ${names.map(i => (`"${i}"`)).join(' ')}`
     const ls = await $`${cmd}`; 
     return ls.stdout.split('\n');
 }

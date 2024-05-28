@@ -1,5 +1,7 @@
 # 简化命令行工具
 
+安装：npm i -g vz-cmd
+
 ### git 命令
 
 vz git [options] [args...]
@@ -60,3 +62,21 @@ vz tiny -w3000 a.png b.png
 # 或者
 vz tiny --wait=3000 a.png b.png
 ```
+### wx 命令
+
+用于将html或vue文件转换成微信文件
+
+#### 选项可拼接
+1. -h：--wxml,html转wxml
+2. -v: --vue,vue指令转微信指令
+
+### wxss命令
+
+用于将scss转换成wxss，并且将px和rem转换成rpx
+
+#### 选项
+1. -p：--px2rpx px转换倍数
+1. -r：--rem2rpx rem转换倍数
+
+### todo
+- 查询当前文件夹中的文件在服务器上是否存在

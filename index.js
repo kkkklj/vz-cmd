@@ -6,7 +6,9 @@ import {$} from 'execa';
 import {Regexps, api} from './config.js'
 import * as utils from './utils/utils.js'
 import request from './utils/request.js'
-import { copyFileSync, createReadStream, createWriteStream, statSync, writeFileSync } from 'fs';
+import { copyFileSync, createReadStream, createWriteStream, existsSync, readFileSync, statSync, unlink, unlinkSync, writeFileSync } from 'fs';
+import { vueDirectReplace, wxmlReplace } from './utils/wxml.js';
+import { scssParse } from './utils/wxss.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -158,7 +160,8 @@ program.command('ls')
 })
 // test 1
 
-
+// todo -r 重新压缩上次压缩请求失败的图片
+// todo --size 根据图片尺寸过滤
 program.command('tiny')
 .argument('[imgList...]','图片列表')
 .option('-w, --wait <time>')
@@ -217,5 +220,35 @@ program.command('tiny')
     })
 })
 
+program.command('wx')
+.argument('[args...]', 'args')
+.option('-h, --wxml')
+.option('-v, --vue')
+.action(async(args, options) => {
+    let info = readFileSync(args[0], 'utf-8');
+    if (options.vue) {
+        info = vueDirectReplace(info)
+    }
+    if (options.wxml) {
+        info = wxmlReplace(info)
+    }
+    const fileNameArr = args[0].split('.');
+    const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
+    if (existsSync(nName)) {
+        unlinkSync(nName)
+    }
+    writeFileSync(nName, info);
+    
+})
 
+program.command('wxss')
+
+.argument('[args...]', 'args')
+.option('-p, --px2rpx <time>')
+.option('-r, --rem2rpx <time>')
+.action(async(args, options) => {
+    const px2rpx = options.px2rpx || 2;
+    const rem2rpx = options.rem2rpx || 200;
+    scssParse(args[0], {px2rpx, rem2rpx})
+})
 program.parse();
