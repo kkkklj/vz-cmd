@@ -23,9 +23,17 @@ vz git -ps "fix: 改了个bug" .
 vz git -mgt test dev
 ```
 
+### config 命令
+
+- set 设置变量
+- delete 删除变量
+- get 获取所有变量
+
 ### wxml 命令
 
-用于将html或vue文件转换成微信文件
+vz wxml [-hv] filename.wxml
+
+用于将html或vue文件转换成wxml文件
 
 #### 选项可拼接
 1. -h：--wxml,html转wxml
@@ -33,14 +41,15 @@ vz git -mgt test dev
 
 ### wxss命令
 
+vz wxss [-p2 -r200] filename.scss
+
 用于将scss转换成wxss，并且将px和rem转换成rpx
 
 #### 选项
 1. -p：--px2rpx px转换倍数
 1. -r：--rem2rpx rem转换倍数
 
-### todo
-- 查询当前文件夹中的文件在服务器上是否存在
+
 
 ## 以下命令需要终端支持linux命令
 

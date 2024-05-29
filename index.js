@@ -267,6 +267,7 @@ program.command('wxss')
 .option('-p, --px2rpx <time>')
 .option('-r, --rem2rpx <time>')
 .action(async(args, options) => {
+    console.log('options',options)
     const px2rpx = options.px2rpx || 2;
     const rem2rpx = options.rem2rpx || 200;
     scssParse(args[0], {px2rpx, rem2rpx})
