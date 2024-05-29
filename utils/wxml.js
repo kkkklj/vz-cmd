@@ -1,4 +1,7 @@
-/** @todo 单字母标签匹配bug，i标签 */
+/** 
+ * @todo bug：class换行会多出一个class
+ * @todo 双class合并
+ * @todo 单字母标签匹配bug，i标签 */
 export const wxmlReplace = (info) => {
     const before = {
         classTagReplaceClass: tagName => RegExp(`(?<=\\<${tagName}.*)class\\=\\"`,'g'),
@@ -71,6 +74,8 @@ export const wxmlReplace = (info) => {
     .repalceWxml('img', 'image')
     .repalceWxml('var', 'text')
     .repalceWxml('template', 'block', true)
+    .replaceAll('@click.stop','bind:tap')
+    .replaceAll('@click','bind:tap')
     // .repalceWxml('i\ ', 'text')
     // .repalceWxml('i\\>', 'text')
 }

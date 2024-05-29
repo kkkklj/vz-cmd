@@ -22,6 +22,26 @@ vz git -ps "fix: 改了个bug" .
 # -mgt 将当前分支合并进test和dev
 vz git -mgt test dev
 ```
+
+### wxml 命令
+
+用于将html或vue文件转换成微信文件
+
+#### 选项可拼接
+1. -h：--wxml,html转wxml
+2. -v: --vue,vue指令转微信指令
+
+### wxss命令
+
+用于将scss转换成wxss，并且将px和rem转换成rpx
+
+#### 选项
+1. -p：--px2rpx px转换倍数
+1. -r：--rem2rpx rem转换倍数
+
+### todo
+- 查询当前文件夹中的文件在服务器上是否存在
+
 ## 以下命令需要终端支持linux命令
 
 为什么采用linux命令，应为linux命令对文件的一些处理比较灵活，例如.和没参数查询全部，0*能查询所有0开头的文件，懒得再实现一套了
@@ -37,6 +57,7 @@ vz ls [-mco] [args...]
 1. -m: 通过正则匹配过滤文件，字符串会作为js中的RegExp函数的参数传入生成正则
 2. -c：过滤后的文件复制到目标文件夹，支持相对路径
 3. -o: 过滤后文件输出为js数组
+4. -h: 用于检查文件在服务器中是否存在，需要通过vz config set checkUrl="xxx"设置地址前缀
 
 ```shell
 # 查找蓝湖导出所有图片中的二倍图，并放到当前目录下的file文件夹
@@ -62,21 +83,3 @@ vz tiny -w3000 a.png b.png
 # 或者
 vz tiny --wait=3000 a.png b.png
 ```
-### wx 命令
-
-用于将html或vue文件转换成微信文件
-
-#### 选项可拼接
-1. -h：--wxml,html转wxml
-2. -v: --vue,vue指令转微信指令
-
-### wxss命令
-
-用于将scss转换成wxss，并且将px和rem转换成rpx
-
-#### 选项
-1. -p：--px2rpx px转换倍数
-1. -r：--rem2rpx rem转换倍数
-
-### todo
-- 查询当前文件夹中的文件在服务器上是否存在
