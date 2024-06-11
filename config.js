@@ -6,3 +6,6 @@ export const Regexps = {
 export const api = {
     TINY: 'https://tinypng.com/backend/opt/shrink'
 }
+export const localConfigType = {
+    cmds: 'array'
+}

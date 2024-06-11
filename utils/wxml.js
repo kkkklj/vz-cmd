@@ -1,11 +1,9 @@
 /** 
- * @todo bug：class换行会多出一个class
- * @todo 双class合并
  * @todo 单字母标签匹配bug，i标签 */
 export const wxmlReplace = (info) => {
     const before = {
-        classTagReplaceClass: tagName => RegExp(`(?<=\\<${tagName}.*)class\\=\\"`,'g'),
-        classTagReplaceStartTag: tagName => RegExp(`(?<=\\<)${tagName}(?=.*class)`,'g'),
+        classTagReplaceClass: tagName => RegExp(`(?<=\\<${tagName}[\\ \s\r\n]*.*)class\\=\\"`,'g'),
+        classTagReplaceStartTag: tagName => RegExp(`(?<=\\<)${tagName}(?=[\\ \s\r\n]*.*class)`,'g'),
         noClassAddClass: tagName => RegExp(`(?<=\\<)${tagName}`,'g'),
         endTag: tagName => RegExp(`(?<=\\<\\/)${tagName}`,'g'),
         allTag: tagName => RegExp(`(?<=(\\<|\\<\\/))${tagName}`,'g')
@@ -17,7 +15,20 @@ export const wxmlReplace = (info) => {
         endTag: n => n,
         allTag: n => n
     }
+    const tagMap  = new Map();
+    const checkConflictTag = (oldTagName) => {
+        let conflict = false;
+        tagMap.forEach((_old, _new) => {
+            if(RegExp(`^${oldTagName}`).test(_new)) {
+                conflict = true;
+            }
+        })
+        return conflict;
+    }
+    
     String.prototype.repalceWxml = function(_old, _new, isTemplate) {
+        // const conflict = checkConflictTag(_old);
+        // tagMap.set(_old,_new);
         if (isTemplate) {
             return this
             .replaceAll(before.allTag(_old), after.allTag(_new));
@@ -73,10 +84,15 @@ export const wxmlReplace = (info) => {
     .repalceWxml('p', 'view')
     .repalceWxml('img', 'image')
     .repalceWxml('var', 'text')
+    .repalceWxml('label', 'text')
+    // .repalceWxml('i', 'text')
     .repalceWxml('template', 'block', true)
-    .replaceAll('@click.stop','bind:tap')
+    .replaceAll('@click.stop','catchtap')
     .replaceAll('@click','bind:tap')
-    // .repalceWxml('i\ ', 'text')
+    .replaceAll(':src','src')
+    .replaceAll(':class','class')
+    .replaceAll(/(?<=\s)\:key/g,'wx:key')
+    
     // .repalceWxml('i\\>', 'text')
 }
 export const vueDirectReplace = (info) => {

@@ -1,4 +1,4 @@
-# 简化命令行工具
+# 为了提高效率写的命令行工具
 
 安装：npm i -g vz-cmd
 
@@ -24,6 +24,8 @@ vz git -mgt test dev
 ```
 
 ### config 命令
+
+会在用户目录中创建vz_cmd_config.json文件保存配置信息
 
 - set 设置变量
 - delete 删除变量
@@ -73,6 +75,12 @@ vz ls [-mco] [args...]
 vz ls -m"2x\\.(png|jpg)" -c file
 # 或者
 vz ls --match="2x\\.(png|jpg)" -c file
+
+# 检查文件是否存在于服务器上
+# 设置前缀
+vz config set checkUrl="https://xxx"
+# 检查当前目录所有文件
+vz ls -h
 ```
 
 ### tiny 命令
@@ -92,3 +100,10 @@ vz tiny -w3000 a.png b.png
 # 或者
 vz tiny --wait=3000 a.png b.png
 ```
+
+### npm 命令
+
+vz npm -h 查看可用命令
+
+- vz npm -r1 修改成淘宝镜像
+- vz npm publish 推送npm包时自动检测镜像，非官方镜像则切换成官方镜像推送后切换回原来使用的镜像

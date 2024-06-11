@@ -77,3 +77,6 @@ export const configFile = {
        return existsSync(configPath)
     }
 }
+/** @returns {string} */
+export const getType = o => 
+Object.prototype.toString.call(o).match(/(?<=\[object\s)\w*/)[0].toLocaleLowerCase()

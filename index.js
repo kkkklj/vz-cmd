@@ -11,6 +11,7 @@ import { vueDirectReplace, wxmlReplace } from './utils/wxml.js';
 import { scssParse } from './utils/wxss.js';
 import { homedir } from 'os';
 import { join } from 'path';
+import { fileConfig } from './utils/fileConfig.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -125,7 +126,6 @@ program.command('git')
         utils.commandDesc('本地代码迁移\n目标分支为:\n'+ targetBranch);
         gitStash(targetBranch)
     }
-    // console.log(options.push, options.merge, args, options.stash, options);
 })
 
 
@@ -181,15 +181,18 @@ program.command('ls')
 })
 // test 1
 
-// todo -r 重新压缩上次压缩请求失败的图片
-// todo --size 根据图片尺寸过滤
+/** 
+ * @todo -r 重新压缩上次压缩请求失败的图片
+ */
 program.command('tiny')
 .argument('[imgList...]','图片列表')
 .option('-w, --wait <time>')
+.option('-m, --minSize <size>')
 .action(async (imgList,options) => {
-    console.log(imgList,options)
+    const minSize = options.minSize ? options.minSize : 0;
     const waittime = Number(options.wait) || 0;
-    const list = (await utils.getFileList(imgList)).filter(i => Regexps.IMG.test(i));
+    const list = (await utils.getFileList(imgList)).filter(i => Regexps.IMG.test(i))
+    .filter(file => statSync(file).size >= minSize * 1024);
     function getKb(byte) {
         return (byte / 1024).toFixed(1) + 'k'
     }
@@ -273,6 +276,9 @@ program.command('wxss')
     scssParse(args[0], {px2rpx, rem2rpx})
 })
 
+/**
+ * @todo 存储命令行 .bashrc部分处理
+ */
 program.command('config [type]')
 .argument('[args...]', 'args')
 .action(async(type, args) => {
@@ -294,5 +300,60 @@ program.command('config [type]')
     }
 })
 
+program.command('npm [type]')
+.on('-h, --help', args => {
+    return '1'
+})
+.option('-r, --registry <registry>',`
+[
+    'https://registry.npmjs.org/',  //官方
+    'https://registry.npmmirror.com', // 淘宝
+    'https://npm.aliyun.com',   //阿里
+    'https://mirrors.cloud.tencent.com/npm/',
+    'https://mirrors.ustc.edu.cn/'
+][index]
+
+ex: vz npm -r0
+`)
+.action(async(type, options) => {
+    const registry = [
+        'https://registry.npmjs.org/',  //官方
+        'https://registry.npmmirror.com', // 淘宝
+        'https://npm.aliyun.com',   //阿里
+        'https://mirrors.cloud.tencent.com/npm/',
+        'https://mirrors.ustc.edu.cn/'
+    ]
+    if (type === 'publish') {
+       const _registry = await utils.execShell('npm config get registry');
+       console.log(chalk.bgBlue('原镜像为：',_registry));
+       const isOfficial = _registry === registry[0]
+       if (!isOfficial) {
+        console.log(chalk.bgGray('检测到镜像非官方，切换为官方镜像推送'));
+        await $`npm config set registry ${registry[0]}`;
+       }
+       await $`npm publish`;
+       if (!isOfficial) {
+        await $`npm config set registry ${_registry}`;
+       }
+       console.log(chalk.green('推送成功' + (isOfficial ? '' : '，切换为原镜像')))
+    }
+    if(options.registry) {
+        const _set = registry[options.registry]
+        await $`npm config set registry ${_set}`;
+        return console.log(chalk.green('设置镜像成功，当前镜像为：' + _set))
+    }
+})
+
+program.command('test')
+.argument('[args...]', 'args')
+.option('-d, --delete <prop>')
+.action((args, options) => {
+    if (options.delete) {
+        delete fileConfig[options.delete]
+    } else {
+        fileConfig.a = args[0]
+    }
+    
+})
 
 program.parse();
