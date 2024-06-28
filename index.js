@@ -94,6 +94,7 @@ program.command('git')
 .option('-ps, --push', 'use git push')
 .argument('[args...]', 'args')
 .option('-mgt, --mergeto', 'use git push')
+.option('--loop', '失败就一直提交，github被墙的情况')
 .option('--stash', 'use git stash to target branch')
 .action(async (args,options) => {
     console.log(options)
@@ -111,7 +112,20 @@ program.command('git')
         : addList[0];
         utils.commandDesc('代码推送\ncommit为:\n'+ commit);
         console.log(chalk.bold.green(`添加文件有:\n${addContents}`))
-        gitPush(commit, [...addList])
+        const loopPush = async () => {
+            try {
+                await gitPush(commit, [...addList])
+            } catch (error) {
+                console.log(chalk.red('提交失败，再次尝试'))
+                loopPush()
+            }
+        }
+        if (options.loop) {
+            loopPush()
+        } else {
+            gitPush(commit, [...addList])
+        }
+        
     }
     if(options.mergeto) {
         const currentBranch = await getGitBranch();
