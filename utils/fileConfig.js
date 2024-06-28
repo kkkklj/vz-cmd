@@ -42,9 +42,11 @@ const handler = {
     }
   },
   apply(fn, _this, args) {
-    fn.apply(_this, args);
-    configFile.setInfo(fileConfig);
-    return true;
+    try {
+      return fn.apply(_this, args) || true;
+    } finally {
+      configFile.setInfo(fileConfig);
+    }
   },
   deleteProperty(target, propKey) {
     try {

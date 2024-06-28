@@ -30,8 +30,8 @@ export const scssParse = (path, {px2rpx, rem2rpx}) => {
             while(!result.done) {
                 const value = result.value[0];
                 const index = result.value.index + offset;
-                str = str.slice(0, index) + (parseFloat(value) * multiple) + 'rpx' + str.slice(index + value.length)
-                offset += (parseFloat(value) * multiple + '').length - (parseFloat(value) + '').length;
+                str = str.slice(0, index) + Math.round(parseFloat(value) * multiple) + 'rpx' + str.slice(index + value.length)
+                offset += (Math.round(parseFloat(value) * multiple) + '').length - (parseFloat(value) + '').length;
                 result = it.next();
             }
             return str

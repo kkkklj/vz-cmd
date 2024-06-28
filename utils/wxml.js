@@ -1,3 +1,4 @@
+import compiler from 'vue-template-compiler'
 /** 
  * @todo 单字母标签匹配bug，i标签 */
 export const wxmlReplace = (info) => {
@@ -117,4 +118,79 @@ export const vueDirectReplace = (info) => {
     .replaceAll('v-if=','wx:if=')
     .replaceAll('v-else-if=','wx:elif=')
     .replaceAll('v-else','wx:else')
+}
+const getsfc = function(content) {
+    let output = compiler.parseComponent(content)
+    return output
+}
+const compileTpl = function(tpl) {
+    let output = compiler.compile(tpl, { comments: true, preserveWhitespace: false, shouldDecodeNewlines: true })
+    return output
+}
+/**
+ * 
+ * @param {String} staticClass 
+ * @param {String} classBinding 
+ */
+const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
+.map(kv => {
+    const [k, v] = kv.split(':');
+    return `{{${v}?${k}:''}}`
+}).join(' ');
+const renderClass = (staticClass, classBinding) => {
+    let className = '';
+    let _bind = '';
+    let _static = ''
+    classBinding = classBinding?.trim() || ''
+    if (classBinding) {
+        if (/^\[/.test(classBinding)) {
+            _bind = classBinding.replace(/^\[/,'').replace(/\]$/,'');
+            const bindStrs = _bind.split(',');
+            _bind = bindStrs.reduce((val, str) => {
+                str = str.trim();
+                if (/(\&|\?)/.test(str)) {
+                    val += ` {{${str}}}`
+                } else if (/^\{/.test(str)) {
+                    val += ` ${parseObj(str)}`
+                } else {
+                    val += ` ${str.slice(1,-1)}`
+                }
+                return val
+            },'').trim();
+        } else if (/^\{/.test(classBinding)) {
+            _bind = ''
+        }
+    }
+    if (staticClass) {
+        _static = staticClass.slice(1,-1);
+    }
+    className = `class="${_static||''}${_bind ? _static && ' ' || '' + _bind : ''}"`;
+    return className === 'class=""' ? '' : '' + className
+}
+export const wxml2Compiler = (info) => {
+    const sfc = getsfc(info)
+    const astRes = compileTpl(sfc.template.content).ast
+    const ast = astRes.children[0];
+    // ast.children = [];
+    /**
+     * 
+     * @param {(typeof ast)[]} ast 
+     */
+    const render = (ast) => {
+        return ast.map(node => {
+            const tagName = node.tag;
+            const children = node.children;
+            
+            let temp = (childs) => `<view ${renderClass(node.staticClass, node.classBinding)}>${childs}</view>`;
+            if (tagName === 'img') {
+                temp = (childs) => `<image>${childs}</image>`;
+            }
+            return temp(
+                children ? render(children) : ''
+            )
+        }).join('')
+    }
+
+    console.log('astRes-->', ast, render([ast]))
+    console.log('staticClass-->', ast.staticClass)
 }

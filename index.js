@@ -7,11 +7,12 @@ import {Regexps, api} from './config.js'
 import * as utils from './utils/utils.js'
 import request from './utils/request.js'
 import { copyFileSync, createReadStream, createWriteStream, existsSync, readFileSync, statSync, unlink, unlinkSync, writeFileSync } from 'fs';
-import { vueDirectReplace, wxmlReplace } from './utils/wxml.js';
+import { vueDirectReplace, wxml2Compiler, wxmlReplace } from './utils/wxml.js';
 import { scssParse } from './utils/wxss.js';
 import { homedir } from 'os';
 import { join } from 'path';
 import { fileConfig } from './utils/fileConfig.js';
+import { KEYS_STAGED } from './enum/configKey.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -187,11 +188,22 @@ program.command('ls')
 program.command('tiny')
 .argument('[imgList...]','图片列表')
 .option('-w, --wait <time>')
-.option('-m, --minSize <size>')
+.option('-m, --minSize <size>','最小尺寸限制,单位kb')
+.option('-r, --restart','上次失败的图片重新上传')
 .action(async (imgList,options) => {
     const minSize = options.minSize ? options.minSize : 0;
     const waittime = Number(options.wait) || 0;
-    const list = (await utils.getFileList(imgList)).filter(i => Regexps.IMG.test(i))
+    let list = [];
+    if (options.restart) {
+        if (fileConfig[KEYS_STAGED.tinyFailHistory]?.length) {
+            list = fileConfig[KEYS_STAGED.tinyFailHistory];
+        } else {
+            return console.log(chalk.yellow('缓存为空'))
+        }
+    } else {
+        list = (await utils.getFileList(imgList))
+    }
+    list.filter(i => Regexps.IMG.test(i))
     .filter(file => statSync(file).size >= minSize * 1024);
     function getKb(byte) {
         return (byte / 1024).toFixed(1) + 'k'
@@ -200,6 +212,7 @@ program.command('tiny')
         "referer": "https://tinypng.com/",
         "user-agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36',
     }
+    fileConfig[KEYS_STAGED.tinyFailHistory] = [];
     list.forEach((file) => {
         const _rawSize = statSync(file).size;
         let diff;
@@ -239,6 +252,7 @@ program.command('tiny')
             if (error === 'warn') {
                 return
             }
+            fileConfig[KEYS_STAGED.tinyFailHistory].push(file);
             console.log(chalk.red('Error occurred while compressing the file: ' + error));
         })
     })
@@ -262,7 +276,13 @@ program.command('wxml')
         unlinkSync(nName)
     }
     writeFileSync(nName, info);
-    
+})
+
+program.command('wxml2')
+.argument('[args...]', 'args')
+.action(async(args, options) => {
+    let info = readFileSync(args[0], 'utf-8');
+    wxml2Compiler(info)
 })
 
 program.command('wxss')
@@ -336,12 +356,14 @@ ex: vz npm -r0
         await $`npm config set registry ${_registry}`;
        }
        console.log(chalk.green('推送成功' + (isOfficial ? '' : '，切换为原镜像')))
+       return
     }
     if(options.registry) {
         const _set = registry[options.registry]
         await $`npm config set registry ${_set}`;
         return console.log(chalk.green('设置镜像成功，当前镜像为：' + _set))
     }
+    return console.log(chalk.red('未知命令'))
 })
 
 program.command('test')
@@ -352,6 +374,22 @@ program.command('test')
         delete fileConfig[options.delete]
     } else {
         fileConfig.a = args[0]
+    }
+    
+})
+
+/**
+ * 自用
+ */
+program.command('iconfont')
+.action(async () => {
+    const targetPath = fileConfig.userliveIconfontPath;
+    try {
+        await $`rm ${targetPath}/*`;
+    } catch(e) {
+        console.log(chalk.red(e))
+    } finally {
+        $`cp ./* ${targetPath}/`;
     }
     
 })
