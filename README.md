@@ -37,6 +37,14 @@ vz wxml [-hv] filename.wxml
 
 用于将html或vue文件转换成wxml文件
 
+### wxml2 命令
+
+通过vue模板编译器对模板进行编译转换wxml（更新中。。。）
+
+```shell
+vz wxml2 filename.wxml
+```
+
 #### 选项可拼接
 1. -h：--wxml,html转wxml
 2. -v: --vue,vue指令转微信指令

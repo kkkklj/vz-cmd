@@ -180,8 +180,8 @@ export const wxml2Compiler = (info) => {
             return ''
         }
         const showVal = node.directives.find(i => i.name === 'show')?.value || '';
-        const ifVal = node.directives.find(i => i.name === 'if')?.value || '';
-        const val = ifVal + ifVal ? '&&' : '' + showVal;
+        const ifVal = node.if || '';
+        const val = ifVal + ((ifVal ? '&&' : '') + showVal);
         return val ? ` wx:if="{{${val}}}"` : ''
     }
     /*** @param {typeof ast} node */
@@ -196,6 +196,35 @@ export const wxml2Compiler = (info) => {
         }
         return ` ${modelItem.arg}="{{${modelVal}}}"`
     }
+    const renderEvent = (node) => {
+        const {events} = node;
+        if (!events) {
+            return ''
+        }
+        const evMap = {
+            click: 'tap'
+        }
+        const evs = Object.keys(events).map((k) => {
+            const {modifiers, value} = events[k];
+            let evModify = modifiers?.stop ? 'catch' : 'bind';
+            let ev = evMap[k] || k;
+            return `${evModify + ev}="${value}"`;
+        })
+        return ' ' + evs.join(' ')
+    }
+    const renderAttrs = (node) => {
+        const {attrs} = node;
+        if (!attrs) {
+            return ''
+        }
+        const _attrs = attrs.map(attr => {
+            if (!(typeof attr.dynamic === 'boolean')) {
+                return `${attr.name}=${attr.value}`
+            }
+            return `${attr.name}="{{${attr.value}}}"`
+        }).join(' ')
+        return _attrs ? ' ' + _attrs : '';
+    }
     /**
      * @param {(typeof ast)[]} ast 
      */
@@ -204,10 +233,15 @@ export const wxml2Compiler = (info) => {
             const tagName = node.tag;
             const children = node.children;
             const _tagName = tagMap[tagName] || tagName;
-            if (tagName === 'a') {
-                // console.log(node)
-            }
-            let temp = (childs) => `<${_tagName}${renderClass(node.staticClass, node.classBinding)}${renderModel(node)}${renderIf(node)}>${childs}</${_tagName}>`;
+            // if (/clear-screen-btn/.test(node.classBinding)) {
+            //     // console.log('-->',node)
+            // }
+            const tagAttrs = renderClass(node.staticClass, node.classBinding)
+            + renderModel(node)
+            + renderAttrs(node)
+            + renderEvent(node)
+            + renderIf(node)
+            let temp = (childs) => `<${_tagName}${tagAttrs}>${childs}</${_tagName}>`;
             if (node.type === 3 || node.type === 2) {
                 return node.isComment ? `\n<!-- ${node.text} -->\n` : node.text
             }
