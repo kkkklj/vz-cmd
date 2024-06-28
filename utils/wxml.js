@@ -216,8 +216,5 @@ export const wxml2Compiler = (info) => {
             )
         }).join('')
     }
-    
-    // console.log('astRes-->', ast, render([ast]))
-    console.log('staticClass-->', ast.tag)
     return render([ast]);
 }
