@@ -1,4 +1,27 @@
 import compiler from 'vue-template-compiler'
+const tagMap = {
+    "span": 'text',
+    'strong': 'text',
+    'div': 'view',
+    'header': 'view',
+    'article': 'view',
+    'footer': 'view',
+    'h1': 'view',
+    'h2': 'view',
+    'h3': 'view',
+    'h4': 'view',
+    'h5': 'view',
+    'h6': 'view',
+    'main': 'view',
+    'nav': 'view',
+    'section': 'view',
+    'ul': 'view',
+    'li': 'view',
+    'ol': 'view',
+    'p': 'view',
+    'img': 'image',
+    'var': 'text'
+}
 /** 
  * @todo 单字母标签匹配bug，i标签 */
 export const wxmlReplace = (info) => {
@@ -40,29 +63,7 @@ export const wxmlReplace = (info) => {
         .replaceAll(before.noClassAddClass(_old), after.noClassAddClass(_new, _old))
         .replaceAll(before.endTag(_old), after.endTag(_new));
     }
-    const map = {
-        "span": 'text',
-        'strong': 'text',
-        'div': 'view',
-        'header': 'view',
-        'article': 'view',
-        'footer': 'view',
-        'h1': 'view',
-        'h2': 'view',
-        'h3': 'view',
-        'h4': 'view',
-        'h5': 'view',
-        'h6': 'view',
-        'main': 'view',
-        'nav': 'view',
-        'section': 'view',
-        'ul': 'view',
-        'li': 'view',
-        'ol': 'view',
-        'p': 'view',
-        'img': 'image',
-        'var': 'text'
-    }
+    
     return info
     .repalceWxml('span', 'text')
     .repalceWxml('strong', 'text')
@@ -158,39 +159,65 @@ const renderClass = (staticClass, classBinding) => {
                 return val
             },'').trim();
         } else if (/^\{/.test(classBinding)) {
-            _bind = ''
+            _bind = parseObj(classBinding)
         }
     }
     if (staticClass) {
         _static = staticClass.slice(1,-1);
     }
     className = `class="${_static||''}${_bind ? _static && ' ' || '' + _bind : ''}"`;
-    return className === 'class=""' ? '' : '' + className
+    return className === 'class=""' ? '' : ' ' + className
 }
+
 export const wxml2Compiler = (info) => {
     const sfc = getsfc(info)
     const astRes = compileTpl(sfc.template.content).ast
-    const ast = astRes.children[0];
+    const ast = astRes;
     // ast.children = [];
+    /*** @param {typeof ast} node */
+    const renderIf = (node) => {
+        if (!node.directives || !node.directives.length) {
+            return ''
+        }
+        const showVal = node.directives.find(i => i.name === 'show')?.value || '';
+        const ifVal = node.directives.find(i => i.name === 'if')?.value || '';
+        const val = ifVal + ifVal ? '&&' : '' + showVal;
+        return val ? ` wx:if="{{${val}}}"` : ''
+    }
+    /*** @param {typeof ast} node */
+    const renderModel = (node) => {
+        if (!node.directives || !node.directives.length) {
+            return '';
+        }
+        const modelItem = node.directives.find(i => i.name === 'model')
+        const modelVal = modelItem?.value || '';
+        if (!modelVal) {
+            return ''
+        }
+        return ` ${modelItem.arg}="{{${modelVal}}}"`
+    }
     /**
-     * 
      * @param {(typeof ast)[]} ast 
      */
     const render = (ast) => {
         return ast.map(node => {
             const tagName = node.tag;
             const children = node.children;
-            
-            let temp = (childs) => `<view ${renderClass(node.staticClass, node.classBinding)}>${childs}</view>`;
-            if (tagName === 'img') {
-                temp = (childs) => `<image>${childs}</image>`;
+            const _tagName = tagMap[tagName] || tagName;
+            if (tagName === 'a') {
+                // console.log(node)
+            }
+            let temp = (childs) => `<${_tagName}${renderClass(node.staticClass, node.classBinding)}${renderModel(node)}${renderIf(node)}>${childs}</${_tagName}>`;
+            if (node.type === 3 || node.type === 2) {
+                return node.isComment ? `\n<!-- ${node.text} -->\n` : node.text
             }
             return temp(
                 children ? render(children) : ''
             )
         }).join('')
     }
-
-    console.log('astRes-->', ast, render([ast]))
-    console.log('staticClass-->', ast.staticClass)
+    
+    // console.log('astRes-->', ast, render([ast]))
+    console.log('staticClass-->', ast.tag)
+    return render([ast]);
 }

@@ -282,7 +282,13 @@ program.command('wxml2')
 .argument('[args...]', 'args')
 .action(async(args, options) => {
     let info = readFileSync(args[0], 'utf-8');
-    wxml2Compiler(info)
+    info = wxml2Compiler(info);
+    const fileNameArr = args[0].split('.');
+    const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
+    if (existsSync(nName)) {
+        unlinkSync(nName)
+    }
+    writeFileSync(nName, info);
 })
 
 program.command('wxss')
