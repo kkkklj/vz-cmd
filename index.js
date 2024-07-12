@@ -295,12 +295,13 @@ program.command('wxml')
 program.command('wxml2')
 .argument('[args...]', 'args')
 .option('-t, --template')
+.option('-c, --classTag', 'class中包含tag名称')
 .action(async(args, options) => {
     let info = readFileSync(args[0], 'utf-8');
     if (options.template) {
         info = `<template>${info}</template>`
     }
-    info = wxml2Compiler(info);
+    info = wxml2Compiler(info, options.classTag);
     const fileNameArr = args[0].split('.');
     const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
     if (existsSync(nName)) {

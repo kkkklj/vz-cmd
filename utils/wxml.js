@@ -138,7 +138,7 @@ const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
     const [k, v] = kv.split(':');
     return `{{${v}?'${k}':''}}`
 }).join(' ');
-const renderClass = (staticClass, classBinding) => {
+const renderClass = (staticClass, classBinding, renderTagName) => {
     let className = '';
     let _bind = '';
     let _static = ''
@@ -153,23 +153,37 @@ const renderClass = (staticClass, classBinding) => {
                     val += ` {{${str}}}`
                 } else if (/^\{/.test(str)) {
                     val += ` ${parseObj(str)}`
+                } else if (/\$\{.*\}/.test(str)) {
+                    val += ' ' + str.replaceAll('${','{{').replaceAll('}','}}')
                 } else {
                     val += ` ${str.slice(1,-1)}`
                 }
+                
                 return val
             },'').trim();
         } else if (/^\{/.test(classBinding)) {
-            _bind = parseObj(classBinding)
+            _bind = parseObj(classBinding).trim();
         }
+    }
+    if (staticClass === '"member-index"') {
+        console.log(_bind)
     }
     if (staticClass) {
         _static = staticClass.slice(1,-1);
     }
-    className = `class="${_static||''}${_bind ? _static && ' ' || '' + _bind : ''}"`;
-    return className === 'class=""' ? '' : ' ' + className
+    const getClassName = (renderTagName) => {
+        const classList = `${_static||''}${_bind ? (_static && ' ' || '') + _bind : ''}`
+        return renderTagName ? `class="${renderTagName}${classList ? ` ${classList}` : ''}"`
+        : `class="${classList}"`
+    }
+        
+    className = getClassName();
+    return renderTagName ?
+    ' ' + getClassName(renderTagName)
+    : className === 'class=""' ? '' : ' ' + getClassName()
 }
 const circularSet = new Set()
-export const wxml2Compiler = (info) => {
+export const wxml2Compiler = (info, tagInClass) => {
     const sfc = getsfc(info)
     const astRes = compileTpl(sfc.template.content).ast
     const ast = astRes;
@@ -198,6 +212,9 @@ export const wxml2Compiler = (info) => {
         const modelVal = modelItem?.value || '';
         if (!modelVal) {
             return ''
+        }
+        if (modelItem.rawName === 'v-model') {
+            return ` vModel="{{${modelVal}}}"`
         }
         return ` ${modelItem.arg}="{{${modelVal}}}"`
     }
@@ -258,7 +275,13 @@ export const wxml2Compiler = (info) => {
                 // console.log('-->',node.ifConditions)
                 return render(node.ifConditions.map(i => i.block))
             }
-            const tagAttrs = renderClass(node.staticClass, node.classBinding)
+            if (node.staticClass === '"member-index"') {
+                // console.log(node)
+            }
+            const classNames = tagInClass && tagMap[node.tag]
+            ? renderClass(node.staticClass, node.classBinding, node.tag)
+            : renderClass(node.staticClass, node.classBinding)
+            const tagAttrs = classNames
             + renderModel(node)
             + renderAttrs(node)
             + renderEvent(node)

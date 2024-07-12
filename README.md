@@ -14,7 +14,8 @@ vz git [options] [args...]
     - args：目标分支
 - -mgt(--mergeto)：将当前分支合并到其他分支
     - args: 目标分支，可有多个
- 
+- --loop 失败就一直推送，直到成功（github被墙的情况） 
+
 例子
 ```shell
 # -ps 推送所有更改
@@ -48,6 +49,9 @@ vz wxml [-hv] filename.wxml
 ```shell
 vz wxml2 filename.wxml
 ```
+#### 选项
+1. -t: --template, 头尾加上template
+2. -c: --classTag, class中加上变更前的标签名字（只有在变更规则里的标签才会加上，组件这种自定义名字的不会加上）
 
 ### wxss命令
 
