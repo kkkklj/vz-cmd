@@ -1,4 +1,4 @@
-# 为了提高效率写的命令行工具
+# 命令行工具
 
 安装：npm i -g vz-cmd
 
@@ -31,11 +31,15 @@ vz git -mgt test dev
 - delete 删除变量
 - get 获取所有变量
 
-### wxml 命令
+### wxml 命令(待废弃)
 
 vz wxml [-hv] filename.wxml
 
 用于将html或vue文件转换成wxml文件
+
+#### 选项可拼接
+1. -h：--wxml,html转wxml
+2. -v: --vue,vue指令转微信指令
 
 ### wxml2 命令
 
@@ -44,10 +48,6 @@ vz wxml [-hv] filename.wxml
 ```shell
 vz wxml2 filename.wxml
 ```
-
-#### 选项可拼接
-1. -h：--wxml,html转wxml
-2. -v: --vue,vue指令转微信指令
 
 ### wxss命令
 

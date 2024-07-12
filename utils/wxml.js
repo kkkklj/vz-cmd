@@ -136,7 +136,7 @@ const compileTpl = function(tpl) {
 const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
 .map(kv => {
     const [k, v] = kv.split(':');
-    return `{{${v}?${k}:''}}`
+    return `{{${v}?'${k}':''}}`
 }).join(' ');
 const renderClass = (staticClass, classBinding) => {
     let className = '';
@@ -168,7 +168,7 @@ const renderClass = (staticClass, classBinding) => {
     className = `class="${_static||''}${_bind ? _static && ' ' || '' + _bind : ''}"`;
     return className === 'class=""' ? '' : ' ' + className
 }
-
+const circularSet = new Set()
 export const wxml2Compiler = (info) => {
     const sfc = getsfc(info)
     const astRes = compileTpl(sfc.template.content).ast
@@ -176,12 +176,17 @@ export const wxml2Compiler = (info) => {
     // ast.children = [];
     /*** @param {typeof ast} node */
     const renderIf = (node) => {
-        if (!node.directives || !node.directives.length) {
+        if ((!node.directives || !node.directives.length) && !node.if && !node.elseif) {
             return ''
         }
-        const showVal = node.directives.find(i => i.name === 'show')?.value || '';
+        const showVal = node.directives?.find(i => i.name === 'show')?.value || '';
+        if (node.elseif) {
+            const elVal = node.elseif || '';
+            const val = elVal + ((elVal && showVal ? '&&' : '') + showVal);
+            return val ? ` wx:elif="{{${val}}}"` : ''
+        }
         const ifVal = node.if || '';
-        const val = ifVal + ((ifVal ? '&&' : '') + showVal);
+        const val = ifVal + ((ifVal && showVal ? '&&' : '') + showVal);
         return val ? ` wx:if="{{${val}}}"` : ''
     }
     /*** @param {typeof ast} node */
@@ -225,6 +230,20 @@ export const wxml2Compiler = (info) => {
         }).join(' ')
         return _attrs ? ' ' + _attrs : '';
     }
+    const renderFor = (node) => {
+        if (!node.for) {
+            return ''
+        }
+        const setVal = (beforeStr, val) => val ? ` ${beforeStr}="${val}"` : ''
+        let forKey = node.key
+        if (forKey && RegExp('^' + node.alias).test(node.key)) {
+            forKey = forKey.replace(RegExp('^' + node.alias + '\\.'),'')
+        }
+        return ` wx:for="{{${node.for}}}"`
+        + setVal('wx:for-item', node.alias)
+        + setVal('wx:for-index', node.iterator1)
+        + setVal('wx:key', forKey)
+    }
     /**
      * @param {(typeof ast)[]} ast 
      */
@@ -233,13 +252,17 @@ export const wxml2Compiler = (info) => {
             const tagName = node.tag;
             const children = node.children;
             const _tagName = tagMap[tagName] || tagName;
-            // if (/clear-screen-btn/.test(node.classBinding)) {
-            //     // console.log('-->',node)
-            // }
+            if (node.ifConditions?.length > 1 && !circularSet.has(node.ifConditions)) {
+                circularSet.add(node.ifConditions);
+
+                // console.log('-->',node.ifConditions)
+                return render(node.ifConditions.map(i => i.block))
+            }
             const tagAttrs = renderClass(node.staticClass, node.classBinding)
             + renderModel(node)
             + renderAttrs(node)
             + renderEvent(node)
+            + renderFor(node)
             + renderIf(node)
             let temp = (childs) => `<${_tagName}${tagAttrs}>${childs}</${_tagName}>`;
             if (node.type === 3 || node.type === 2) {
