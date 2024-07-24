@@ -156,7 +156,14 @@ const renderClass = (staticClass, classBinding, renderTagName) => {
                 } else if (/\$\{.*\}/.test(str)) {
                     val += ' ' + str.replaceAll('${','{{').replaceAll('}','}}')
                 } else {
-                    val += ` ${str.slice(1,-1)}`
+                    // history .slice(1,-1) 会截断变量的头尾
+                    val += (
+                        /^\'.*\'$/.test(str) 
+                        || /^\`.*\`$/.test(str)
+                        || /^\".*\"$/.test(str)
+                    )
+                    && ` ${str.slice(1, -1)}`
+                    || ` {{${str}}}`
                 }
                 
                 return val
@@ -164,9 +171,6 @@ const renderClass = (staticClass, classBinding, renderTagName) => {
         } else if (/^\{/.test(classBinding)) {
             _bind = parseObj(classBinding).trim();
         }
-    }
-    if (staticClass === '"member-index"') {
-        console.log(_bind)
     }
     if (staticClass) {
         _static = staticClass.slice(1,-1);
@@ -274,9 +278,6 @@ export const wxml2Compiler = (info, tagInClass) => {
 
                 // console.log('-->',node.ifConditions)
                 return render(node.ifConditions.map(i => i.block))
-            }
-            if (node.staticClass === '"member-index"') {
-                // console.log(node)
             }
             const classNames = tagInClass && tagMap[node.tag]
             ? renderClass(node.staticClass, node.classBinding, node.tag)
