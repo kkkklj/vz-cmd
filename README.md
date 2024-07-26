@@ -32,22 +32,14 @@ vz git -mgt test dev
 - delete 删除变量
 - get 获取所有变量
 
-### wxml 命令(待废弃)
+### wxml 命令
 
-vz wxml [-hv] filename.wxml
+> 注意：目前用到的编译器只支持vue2版本，所以如果是编译vue3的template，需要自己手动在根那里加个div的根元素（vue2的组件必须有一个根元素），否则只会转换第一个根元素的内容
 
-用于将html或vue文件转换成wxml文件
-
-#### 选项可拼接
-1. -h：--wxml,html转wxml
-2. -v: --vue,vue指令转微信指令
-
-### wxml2 命令
-
-通过vue模板编译器对模板进行编译转换wxml（更新中。。。）
+通过vue模板编译器对模板进行编译转换wxml
 
 ```shell
-vz wxml2 filename.wxml
+vz wxml filename.wxml
 ```
 #### 选项
 1. -t: --template, 头尾加上template

@@ -1,4 +1,4 @@
-import compiler from 'vue-template-compiler'
+import { parse, compileTemplate } from '@vue/compiler-sfc'
 const tagMap = {
     "span": 'text',
     'strong': 'text',
@@ -21,16 +21,17 @@ const tagMap = {
     'p': 'view',
     'img': 'image',
     'var': 'text',
-    'i': 'text',
-    'template': 'block'
+    'i': 'text'
 }
-const getsfc = function(content) {
-    let output = compiler.parseComponent(content)
-    return output
+export const getsfc = function(content) {
+    return parse(content).descriptor
 }
-const compileTpl = function(tpl) {
-    let output = compiler.compile(tpl, { comments: true, preserveWhitespace: false, shouldDecodeNewlines: true })
-    return output
+export const compileTpl = function(tpl) {
+    return compileTemplate({
+        id: 'xxx',
+        filename: 'xxx.vue',
+        source: tpl
+    })
 }
 /**
  * 
@@ -91,11 +92,12 @@ const renderClass = (staticClass, classBinding, renderTagName) => {
     : className === 'class=""' ? '' : ' ' + getClassName()
 }
 const circularSet = new Set()
-export const wxml2Compiler = (info, tagInClass) => {
+export const wxml3Compiler = (info, tagInClass) => {
     const sfc = getsfc(info)
     const astRes = compileTpl(sfc.template.content).ast
     const ast = astRes;
     // ast.children = [];
+    console.log('ast->', ast.type)
     /*** @param {typeof ast} node */
     const renderIf = (node) => {
         if ((!node.directives || !node.directives.length) && !node.if && !node.elseif) {
@@ -172,11 +174,13 @@ export const wxml2Compiler = (info, tagInClass) => {
     /**
      * @param {(typeof ast)[]} ast 
      */
+    let isFirst = false
     const render = (ast) => {
         return ast.map(node => {
+
             const tagName = node.tag;
             const children = node.children;
-            const _tagName = tagMap[tagName] || tagName;
+            const _tagName = node.type === 0 ? 'block' : (tagMap[tagName] || tagName);
             if (node.ifConditions?.length > 1 && !circularSet.has(node.ifConditions)) {
                 circularSet.add(node.ifConditions);
 
@@ -186,7 +190,7 @@ export const wxml2Compiler = (info, tagInClass) => {
             const classNames = tagInClass && tagMap[node.tag]
             ? renderClass(node.staticClass, node.classBinding, node.tag)
             : renderClass(node.staticClass, node.classBinding)
-            const tagAttrs = (_tagName === 'block' ? '' : classNames)
+            const tagAttrs = classNames
             + renderModel(node)
             + renderAttrs(node)
             + renderEvent(node)
@@ -194,7 +198,7 @@ export const wxml2Compiler = (info, tagInClass) => {
             + renderIf(node)
             let temp = (childs) => `<${_tagName}${tagAttrs}>${childs}</${_tagName}>`;
             if (node.type === 3 || node.type === 2) {
-                return node.isComment ? `\n<!-- ${node.text} -->\n` : node.text
+                return node.type === 3 ? `\n<!-- ${node.content} -->\n` : node.content
             }
             return temp(
                 children ? render(children) : ''

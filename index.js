@@ -7,12 +7,13 @@ import {Regexps, api} from './config.js'
 import * as utils from './utils/utils.js'
 import request from './utils/request.js'
 import { copyFileSync, createReadStream, createWriteStream, existsSync, readFileSync, statSync, unlink, unlinkSync, writeFileSync } from 'fs';
-import { vueDirectReplace, wxml2Compiler, wxmlReplace } from './utils/wxml.js';
+import { wxml2Compiler } from './utils/wxml.js';
 import { scssParse } from './utils/wxss.js';
 import { homedir } from 'os';
 import { join } from 'path';
 import { fileConfig } from './utils/fileConfig.js';
 import { KEYS_STAGED } from './enum/configKey.js';
+import { wxml3Compiler } from './utils/wxml2.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -271,28 +272,7 @@ program.command('tiny')
         })
     })
 })
-
 program.command('wxml')
-.argument('[args...]', 'args')
-.option('-h, --wxml')
-.option('-v, --vue')
-.action(async(args, options) => {
-    let info = readFileSync(args[0], 'utf-8');
-    if (options.vue) {
-        info = vueDirectReplace(info)
-    }
-    if (options.wxml) {
-        info = wxmlReplace(info)
-    }
-    const fileNameArr = args[0].split('.');
-    const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
-    if (existsSync(nName)) {
-        unlinkSync(nName)
-    }
-    writeFileSync(nName, info);
-})
-
-program.command('wxml2')
 .argument('[args...]', 'args')
 .option('-t, --template')
 .option('-c, --classTag', 'class中包含tag名称')
@@ -302,6 +282,22 @@ program.command('wxml2')
         info = `<template>${info}</template>`
     }
     info = wxml2Compiler(info, options.classTag);
+    const fileNameArr = args[0].split('.');
+    const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
+    if (existsSync(nName)) {
+        unlinkSync(nName)
+    }
+    writeFileSync(nName, info);
+})
+program.command('wxml3')
+.argument('[args...]', 'args')
+.option('-c, --classTag', 'class中包含tag名称')
+.action(async(args, options) => {
+    let info = readFileSync(args[0], 'utf-8');
+    // if (options.template) {
+    //     info = `<template>${info}</template>`
+    // }
+    info = wxml3Compiler(info, options.classTag);
     const fileNameArr = args[0].split('.');
     const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
     if (existsSync(nName)) {
@@ -369,19 +365,28 @@ ex: vz npm -r0
         'https://mirrors.ustc.edu.cn/'
     ]
     if (type === 'publish') {
-       const _registry = await utils.execShell('npm config get registry');
-       console.log(chalk.bgBlue('原镜像为：',_registry));
-       const isOfficial = _registry === registry[0]
-       if (!isOfficial) {
-        console.log(chalk.bgGray('检测到镜像非官方，切换为官方镜像推送'));
-        await $`npm config set registry ${registry[0]}`;
-       }
-       await $`npm publish`;
-       if (!isOfficial) {
-        await $`npm config set registry ${_registry}`;
-       }
-       console.log(chalk.green('推送成功' + (isOfficial ? '' : '，切换为原镜像')))
-       return
+        const _registry = await utils.execShell('npm config get registry');
+        const isOfficial = _registry === registry[0]
+        try {
+            console.log(chalk.bgBlue('原镜像为：',_registry));
+            
+            if (!isOfficial) {
+                console.log(chalk.bgGray('检测到镜像非官方，切换为官方镜像推送'));
+                await $`npm config set registry ${registry[0]}`;
+            }
+            await $`npm publish`;
+            if (!isOfficial) {
+                await $`npm config set registry ${_registry}`;
+            }
+            console.log(chalk.green('推送成功' + (isOfficial ? '' : '，切换为原镜像')))
+            return
+        } catch (error) {
+            if (!isOfficial) {
+                await $`npm config set registry ${_registry}`;
+            }
+            console.log(chalk.red('推送失败' + (isOfficial ? '' : '，切换为原镜像')))
+            console.log(error)
+        }
     }
     if(options.registry) {
         const _set = registry[options.registry]
