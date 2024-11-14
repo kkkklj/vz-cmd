@@ -64,7 +64,7 @@ const compileVueFile = async (path, compMap) => {
         
         const properIsFn = RegExp(`(?<=^${firstVar}\\.)[0-9a-zA-Z_]+(?=\\()`)
         const properFnName = state.match(properIsFn)?.[0]
-        const properIsLen = RegExp(`(?<=^${firstVar}\\.)length`)
+        const properIsLen = RegExp(`(?<=^${firstVar}\\.)length`).test(firstVar)
         if (properFnName) {
           const checkType = obj => Object.hasOwn(obj.prototype, properFnName)
           if (checkType(String)) {
