@@ -1,5 +1,5 @@
 import compiler from 'vue-template-compiler'
-const tagMap = {
+export const tagMap = {
     "span": 'text',
     'strong': 'text',
     'div': 'view',
@@ -42,11 +42,8 @@ const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
     const [k, v] = kv.split(':');
     return `{{${v}?'${k}':''}}`
 }).join(' ');
-const renderClass = (staticClass, classBinding, renderTagName) => {
-    let className = '';
+export const renderBindClass = classBinding => {
     let _bind = '';
-    let _static = ''
-    classBinding = classBinding?.trim() || ''
     if (classBinding) {
         if (/^\[/.test(classBinding)) {
             _bind = classBinding.replace(/^\[/,'').replace(/\]$/,'');
@@ -76,6 +73,13 @@ const renderClass = (staticClass, classBinding, renderTagName) => {
             _bind = parseObj(classBinding).trim();
         }
     }
+    return _bind;
+}
+const renderClass = (staticClass, classBinding, renderTagName) => {
+    let className = '';
+    let _bind = renderBindClass(classBinding);
+    let _static = ''
+    classBinding = classBinding?.trim() || ''
     if (staticClass) {
         _static = staticClass.slice(1,-1);
     }

@@ -14,6 +14,8 @@ import { join } from 'path';
 import { fileConfig } from './utils/fileConfig.js';
 import { KEYS_STAGED } from './enum/configKey.js';
 import { wxml3Compiler } from './utils/wxml2.js';
+import { createComponentFiles } from './utils/wxCompiler.js';
+import { compilerVueComponents } from './utils/batchCompiler.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -424,4 +426,10 @@ program.command('iconfont')
     
 })
 
+program.command('wx')
+.argument('[args...]', 'args')
+.action(async(args) => {
+    // createComponentFiles(args[0])
+    compilerVueComponents(args[0])
+})
 program.parse();
