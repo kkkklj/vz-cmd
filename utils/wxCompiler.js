@@ -29,16 +29,19 @@ const compileVueFile = async (path, compMap) => {
   const sfc = getsfc(info)
   const { template, script, styles} = sfc
   const fileStates = new Set()
-  
   /**
    * 
    * @param {string} state 
    * @param {boolean} checkBool 
+   * @param {Set<string>|null} scopes
    */
-  function recordState(state, checkBool) {
+  function recordState(state, checkBool, scopes = null) {
     let type = TYPE_STRING
     const varReg = /^[0-9a-zA-Z_]+/
-    const firstVar = state.match(varReg)
+    const firstVar = state.match(varReg)?.[0]
+    if (scopes && scopes.has(firstVar)) {
+      return
+    }
     const record = () => {
       const pState = state.match(varReg)?.[0]
       if (pState) {
@@ -55,10 +58,13 @@ const compileVueFile = async (path, compMap) => {
       const isArray = RegExp(`${firstVar}\\[\\d+\\]`).test(state)
       const isChain = RegExp(`${firstVar}\\.`).test(state)
       const isExec = RegExp(`${firstVar}\\(`).test(state)
+      
       if (isChain) {
         type = TYPE_OBJECT
+        
         const properIsFn = RegExp(`(?<=^${firstVar}\\.)[0-9a-zA-Z_]+(?=\\()`)
         const properFnName = state.match(properIsFn)?.[0]
+        const properIsLen = RegExp(`(?<=^${firstVar}\\.)length`)
         if (properFnName) {
           const checkType = obj => Object.hasOwn(obj.prototype, properFnName)
           if (checkType(String)) {
@@ -66,6 +72,8 @@ const compileVueFile = async (path, compMap) => {
           } else if (checkType(Number)) {
             type = TYPE_NUMBER
           }
+        } else if (properIsLen) {
+          type = TYPE_ARR
         }
       }
       if (isExec) {
@@ -92,8 +100,7 @@ const compileVueFile = async (path, compMap) => {
     fileStates.add(`${key}:${type}`)
   }
   const compileTemplate2Wxml = () => {
-    
-    function renderProps(props, originTagName) {
+    function renderProps(props, originTagName, scopes) {
       if (!props) return ''
       let classValue = ''
       let attrs = ''
@@ -104,13 +111,13 @@ const compileVueFile = async (path, compMap) => {
           classValue = classValue + bindClass(prop)
           return ''
         }
-        return model(prop) + 
+        return model(prop, scopes) + 
         propFor(prop) +
         propForKey(props, prop) + 
         propStaticAttr(prop) +
-        propDyAttr(prop) +
-        propShow(prop) + 
-        propIf(prop) + 
+        propDyAttr(prop, scopes) +
+        propShow(prop, scopes) + 
+        propIf(prop, scopes) + 
         propEvent(prop)
       }).join(' ')
       const setOriginTag = (classValue) => {
@@ -140,10 +147,10 @@ const compileVueFile = async (path, compMap) => {
       }
       return prop.name
     }
-    function model(prop) {
+    function model(prop, scopes) {
       if (!prop.name !== 'model') return ''
       const value = propCont(prop)
-      recordState(value)
+      recordState(value, false, scopes)
       return `${propBindKey(prop)}="{{${value}}}"`
     }
     function propEvent(prop) {
@@ -160,7 +167,7 @@ const compileVueFile = async (path, compMap) => {
       recerdStateByType(value, TYPE_FUNC)
       return `${prefix}${evMap[key] || key}="${value}"`
     }
-    function propIf(prop) {
+    function propIf(prop, scopes) {
       // proptype 7
       if (!['if', 'else-if'].includes(prop.name)) return ''
       let key = 'if'
@@ -168,24 +175,21 @@ const compileVueFile = async (path, compMap) => {
         key = 'elif'
       }
       const value = propCont(prop)
-      recordState(value, true)
+      recordState(value, true, scopes)
       return `wx:${key}="{{${value}}}"`
     }
-    function propShow(prop) {
+    function propShow(prop, scopes) {
       // proptype 7
       if (prop.name !== 'show') return ''
       const value = propCont(prop)
-      recordState(value, true)
+      recordState(value, true, scopes)
       return `hidden="{{!(${value})}}"`
     }
     function propFor(prop) {
       // proptype 7
       if (prop.name !== 'for') return ''
-      const { forParseResult } = prop
       const setAttr = (beforeStr, val) => val ? ` ${beforeStr}="${val}"` : ''
-      const value = forParseResult?.value?.content
-      const index = forParseResult?.key?.content
-      const list = forParseResult.source.content
+      const { value, index, list } = scopeFor(prop)
       recerdStateByType(list, TYPE_ARR)
       return `wx:for="{{${list}}}"` + 
       setAttr('wx:for-item', value) +
@@ -204,12 +208,12 @@ const compileVueFile = async (path, compMap) => {
       }
       return `wx:key="${value}"`
     }
-    function propDyAttr(prop) {
+    function propDyAttr(prop, scopes) {
       // proptype 7
       if (prop.name !== 'bind') return ''
       if (prop.rawName === ':key') return ''
       const value = propCont(prop)
-      recordState(value)
+      recordState(value, false, scopes)
       return `${propBindKey(prop)}="{{${value}}}"`
     }
     function propStaticAttr(prop) {
@@ -225,16 +229,23 @@ const compileVueFile = async (path, compMap) => {
         console.log('errr->', prop)
       }
     }
-    
+    function scopeFor(prop, scopes) {
+      const { forParseResult } = prop
+      const value = forParseResult?.value?.content
+      const index = forParseResult?.key?.content
+      const list = forParseResult.source.content
+      return { value, index, list }
+    }
     /**
      * @param {typeof sfc.template.ast.children[0]} node 
+     * @param {Set<string>|null} scopes
      */
-    const nodeCompiler = (node) => {
+    const nodeCompiler = (node, scopes = null) => {
       const tag = node.tag
       /** @type {*[]} */
       const props = node.props
       const tagName = tagMap[tag] || tag
-      let attrs = renderProps(props, tag)
+      let attrs = renderProps(props, tag, scopes)
       attrs = attrs ? ' ' + attrs : ''
       const space = Array.from({
         length: node.loc.start.column - 1,
@@ -248,15 +259,22 @@ const compileVueFile = async (path, compMap) => {
       if (node.type == ENUM_NODE_TYPE.state) {
         /** @type {string} */
         const state = node.content.content  
-        recordState(state)
+        recordState(state, false, scopes)
         return `{{${state}}}`
       }
       const temp = (childs) => {
         return `${space}<${tagName}${attrs}>${childs}</${tagName}>`
       }
+      const forProp = props.find(prop => prop.name === 'for')
+      if (forProp) {
+        scopes = new Set()
+        const { value, index } = scopeFor(forProp)
+        scopes.add(value)
+        scopes.add(index)
+      }
       return temp(
         node.children?.length 
-        ? node.children.map(childNode => nodeCompiler(childNode)).join('\n')
+        ? node.children.map(childNode => nodeCompiler(childNode, scopes)).join('\n')
         : ''
       );
     }
@@ -365,10 +383,5 @@ export const createComponentFiles = async (path, compMap, outputPath) => {
 }
 export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')
-  // const { wxml, wxss} = await compileVueFile('D:/test/PromotionBanner.vue')
-  // const output = 'D:/test/PromotionBanner.next.wxml'
-  // writeFile(output, wxml)
-  // const wxssOutput = `D:/test/PromotionBanner.next.wxss`
-  // writeFile(wxssOutput, wxss)
 }
 
