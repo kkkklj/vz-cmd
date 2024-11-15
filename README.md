@@ -55,6 +55,17 @@ vz wxss [-p2 -r200] filename.scss
 1. -p：--px2rpx px转换倍数
 1. -r：--rem2rpx rem转换倍数
 
+### vue2wx 命令
+
+用于将整个vue文件转换为微信小程序组件，如果参数是目录，将会批量转换目录中的vue文件并生成小程序组件目录
+
+vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx]
+
+##### 参数与选项说明
+1. files： 文件或目录，可以多个
+2. --bashUrl: 生成目录的时候，会记录单个目录下的所有组件路径，并与vue文件中的组件名进行匹配，bashUrl用于生成小程序json文件中组件的注册，不能以斜杠开头
+3. -p：--px2rpx px转换倍数
+4. -r：--rem2rpx rem转换倍数
 
 
 ## 以下命令需要终端支持linux命令

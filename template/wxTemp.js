@@ -35,7 +35,7 @@ export const wxJs = (states, methods) => `Component({
   methods: {
     ${
       methods.map(({key}) => {
-        return `${key}(){},`
+        return `${key}() {},`
       }).join('\n    ')
     }
   }

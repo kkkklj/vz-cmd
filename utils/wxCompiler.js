@@ -93,10 +93,12 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
     if (type === TYPE_FUNC) {
       if (/\./.test(key)) return
       if (/\$emit/.test(key)) return
+      if (/\=/.test(key)) return
     }
     if (type === TYPE_ARR) {
       key = key.split('.')[0]
     }
+    key = key.replace(/\(.*\)/, '')
     fileStates.add(`${key}:${type}`)
   }
   const compileTemplate2Wxml = () => {

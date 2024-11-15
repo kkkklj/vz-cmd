@@ -426,7 +426,7 @@ program.command('iconfont')
     
 })
 
-program.command('wx')
+program.command('vue2wx')
 .argument('[args...]', 'args')
 .option('-b, --bashUrl <url>','组件baseUrl，第一个字符不能是斜杠')
 .option('-p, --px2rpx <time>')
@@ -436,7 +436,10 @@ program.command('wx')
     let { bashUrl } = options
     const px2rpx = options.px2rpx || 2;
     const rem2rpx = options.rem2rpx || 200;
-    bashUrl ='/' + bashUrl.replace(/^\//, '')
-    compilerVueComponents(args[0], bashUrl || '/', px2rpx, rem2rpx)
+    bashUrl = bashUrl || ''
+    bashUrl = bashUrl ? '/' + bashUrl.replace(/^\//, '') : ''
+    args.forEach(target => {
+        compilerVueComponents(target, bashUrl, px2rpx, rem2rpx)
+    })
 })
 program.parse();

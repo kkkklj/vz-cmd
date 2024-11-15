@@ -41,16 +41,17 @@ export async function readSomething(path, fileBack, filterFn) {
  * @param {string} path 
  * @param {*[]} allFilesPath 
  */
-export async function compilerVueComponents(path, bashUrl = '/', px2rpx, rem2rpx) {
+export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx) {
   const isVueFile = path => /\.vue$/.test(path)
   const isJsFile = path => /\.js/.test(path)
   readSomething(path, (curPath, allFilesPath) => {
     if (isVueFile(curPath)) {
       const components = allFilesPath.filter(isVueFile)
-      const compMap = new Map()
+      // const compMap = new Map()`
+      let compMap = bashUrl ? new Map() : null
       components.forEach(comp => {
         const name = comp.match(/[0-9a-zA-Z_]+(?=\.vue)/)?.[0]
-        if (name) {
+        if (name && compMap) {
           compMap.set(name, bashUrl + comp.replace(resolve('./')))
         }
       })
