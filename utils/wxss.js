@@ -21,12 +21,12 @@ export const scssParse = (path, {px2rpx, rem2rpx}) => {
  * @param {string} input 
  * @returns 
  */
-export async function compileScss(input) {
+export async function compileScss(input, px2rpx, rem2rpx) {
     input = input.replace(/\@import[\ ]+.*scss[\;]*'/g, '')
     const result = await sass.compileStringAsync(input)
-    return replaceUnit(result)
+    return replaceUnit(result, px2rpx, rem2rpx)
 }
-function replaceUnit(data, px2rpx = true, rem2rpx = true) {
+function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
     String.prototype.replaceCssPx = function(reg, multiple) {
         const it = this.matchAll(RegExp(reg,'g'));
         let result = it.next();

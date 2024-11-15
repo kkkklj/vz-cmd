@@ -24,7 +24,7 @@ const TYPE_OBJECT = 'object'
  * @param {Map<string, string>} compMap 
  * @returns 
  */
-const compileVueFile = async (path, compMap) => {
+const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
   const info = readFileSync(path, 'utf-8')
   const sfc = getsfc(info)
   const { template, script, styles} = sfc
@@ -285,7 +285,7 @@ const compileVueFile = async (path, compMap) => {
   let wxss = ''
   for (let index = 0; index < styles.length; index++) {
     const style = styles[index];
-    const output = await compileScss(style.content)
+    const output = await compileScss(style.content, px2rpx, rem2rpx)
     wxss += output +'\r\n'
   }
   const wxml = compileTemplate2Wxml()
@@ -338,7 +338,7 @@ const compileVueFile = async (path, compMap) => {
  * 
  * @param {string} path 
  */
-export const createComponentFiles = async (path, compMap, outputPath) => {
+export const createComponentFiles = async (path, compMap, outputPath, px2rpx, rem2rpx) => {
   const pathReg = /[\\\\]|[\/]/
   const pathArr = path.split(pathReg);
   const fileName = pathArr.slice(-1)[0];
@@ -347,7 +347,7 @@ export const createComponentFiles = async (path, compMap, outputPath) => {
   // const __dirname = fileURLToPath(import.meta.url)
   const fullPath = resolve(curPath, path)
   // console.log(curPath, fullPath, cwd)
-  const { wxml, wxss, states, methods, components } = await compileVueFile(fullPath, compMap)
+  const { wxml, wxss, states, methods, components } = await compileVueFile(fullPath, compMap, px2rpx, rem2rpx)
   // debugger
   
   const createDir = () => {

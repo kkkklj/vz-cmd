@@ -41,11 +41,9 @@ export async function readSomething(path, fileBack, filterFn) {
  * @param {string} path 
  * @param {*[]} allFilesPath 
  */
-export async function compilerVueComponents(path) {
+export async function compilerVueComponents(path, bashUrl = '/', px2rpx, rem2rpx) {
   const isVueFile = path => /\.vue$/.test(path)
   const isJsFile = path => /\.js/.test(path)
-  // console.log(resolve('./'), process.cwd())
-  // return
   readSomething(path, (curPath, allFilesPath) => {
     if (isVueFile(curPath)) {
       const components = allFilesPath.filter(isVueFile)
@@ -53,11 +51,11 @@ export async function compilerVueComponents(path) {
       components.forEach(comp => {
         const name = comp.match(/[0-9a-zA-Z_]+(?=\.vue)/)?.[0]
         if (name) {
-          compMap.set(name, comp.replace(resolve('./')))
+          compMap.set(name, bashUrl + comp.replace(resolve('./')))
         }
       })
       const outputPath = join(resolve('./'), 'output', curPath.replace(resolve('./')))
-      createComponentFiles(curPath, compMap, outputPath)
+      createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx)
     } else if (isJsFile) {
       writeFile(curPath, readFileSync(curPath, 'utf-8'))
     }

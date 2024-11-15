@@ -428,8 +428,15 @@ program.command('iconfont')
 
 program.command('wx')
 .argument('[args...]', 'args')
-.action(async(args) => {
+.option('-b, --bashUrl <url>','组件baseUrl，第一个字符不能是斜杠')
+.option('-p, --px2rpx <time>')
+.option('-r, --rem2rpx <time>')
+.action(async(args, options) => {
     // createComponentFiles(args[0])
-    compilerVueComponents(args[0])
+    let { bashUrl } = options
+    const px2rpx = options.px2rpx || 2;
+    const rem2rpx = options.rem2rpx || 200;
+    bashUrl ='/' + bashUrl.replace(/^\//, '')
+    compilerVueComponents(args[0], bashUrl || '/', px2rpx, rem2rpx)
 })
 program.parse();
