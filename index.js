@@ -16,6 +16,7 @@ import { KEYS_STAGED } from './enum/configKey.js';
 import { wxml3Compiler } from './utils/wxml2.js';
 import { createComponentFiles } from './utils/wxCompiler.js';
 import { compilerVueComponents } from './utils/batchCompiler.js';
+import { batchDelBranch } from './utils/git.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -431,15 +432,23 @@ program.command('vue2wx')
 .option('-b, --bashUrl <url>','组件baseUrl，第一个字符不能是斜杠')
 .option('-p, --px2rpx <time>')
 .option('-r, --rem2rpx <time>')
+.option('-o, --on <switch>')
 .action(async(args, options) => {
     // createComponentFiles(args[0])
     let { bashUrl } = options
     const px2rpx = options.px2rpx || 2;
     const rem2rpx = options.rem2rpx || 200;
+    const sw = Number(options.on || 0)
     bashUrl = bashUrl || ''
     bashUrl = bashUrl ? '/' + bashUrl.replace(/^\//, '') : ''
     args.forEach(target => {
-        compilerVueComponents(target, bashUrl, px2rpx, rem2rpx)
+        compilerVueComponents(target, bashUrl, px2rpx, rem2rpx, false, sw)
     })
+})
+
+program.command('branch')
+.argument('[args...]', 'args')
+.action(async(args) => {
+    batchDelBranch()
 })
 program.parse();

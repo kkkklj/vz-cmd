@@ -41,7 +41,7 @@ export async function readSomething(path, fileBack, filterFn) {
  * @param {string} path 
  * @param {*[]} allFilesPath 
  */
-export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx) {
+export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx, isFull, sw = 0) {
   const isVueFile = path => /\.vue$/.test(path)
   const isJsFile = path => /\.js/.test(path)
   readSomething(path, (curPath, allFilesPath) => {
@@ -49,15 +49,25 @@ export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx)
       const components = allFilesPath.filter(isVueFile)
       // const compMap = new Map()`
       let compMap = bashUrl ? new Map() : null
+      if (bashUrl === '/./') {
+        bashUrl = '/'
+      }
       components.forEach(comp => {
         const name = comp.match(/[0-9a-zA-Z_]+(?=\.vue)/)?.[0]
         if (name && compMap) {
           compMap.set(name, bashUrl + comp.replace(resolve('./')))
         }
       })
-      const outputPath = join(resolve('./'), 'output', curPath.replace(resolve('./')))
-      createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx)
-    } else if (isJsFile) {
+      curPath = curPath.replace(/^[\.\/]/, '').replace(/[\/\/|\\\\]/g, '/')
+      let outputPath = join(resolve('./'), 'output', curPath)
+      if (isFull) {
+        const fullPath = isFull ? curPath : join(resolve('./'), curPath)
+        const targetDir = path.split('/').slice(0, -1).join('/')
+        outputPath = join(targetDir, 'output', fullPath.replace(targetDir, '').split('/').join('/'))
+      }
+      
+      createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx, sw)
+    } else if (isJsFile(curPath)) {
       writeFile(curPath, readFileSync(curPath, 'utf-8'))
     }
   })

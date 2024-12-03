@@ -45,13 +45,17 @@ export const wxJs = (states, methods) => `Component({
  * @param {{path:string, name: string}[]} components 
  * @returns 
  */
-export const wxJson = (components) => `{
-  "component": true,
-  "usingComponents": {
-    ${
-      components.map(item => {
-        return `"${item.name}": "${item.path.replace(/[\\\\]|[\\]|[\/\/]/g, '/').replace(/\.vue$/, '')}"`
-      }).join(',\n    ')
+export const wxJson = (components) => {
+  return `{
+    "component": true,
+    "usingComponents": {
+      ${
+        components.map(item => {
+          let path = item.path.replace(/[\\\\]|[\\]|[\/\/]/g, '/').replace(/\.vue$/, '')
+          const name = path.split('/').slice(-1)
+          return `"${item.name}": "${path + '/' + name}"`
+        }).join(',\n      ')
+      }
     }
-  }
 }`
+}

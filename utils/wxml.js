@@ -37,7 +37,7 @@ const compileTpl = function(tpl) {
  * @param {String} staticClass 
  * @param {String} classBinding 
  */
-const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
+export const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
 .map(kv => {
     const [k, v] = kv.split(':');
     return `{{${v}?'${k}':''}}`

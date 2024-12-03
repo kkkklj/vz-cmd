@@ -1,7 +1,7 @@
 import { parse, compileTemplate } from '@vue/compiler-sfc'
 import { readFileSync, writeFileSync, existsSync, unlinkSync, statfsSync, mkdir, mkdirSync, stat } from 'fs';
-import { renderBindClass, tagMap } from './wxml.js';
-import { ENUM_NODE_TYPE } from '../enum/sfc.enum.js';
+import { parseObj, renderBindClass, tagMap } from './wxml.js';
+import { ENUM_NODE_TYPE, ENUM_TEMPLATE_RECORD_ON } from '../enum/sfc.enum.js';
 import { compileScss } from './wxss.js';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,14 +17,15 @@ const TYPE_NUMBER = 'number'
 const TYPE_BOOL = 'boolean'
 const TYPE_ARR = 'array'
 const TYPE_OBJECT = 'object'
-
+/** 开关是否关闭 */
+const switchOff = (sw, type) => !(sw & type)
 /**
  * 
  * @param {string} path 
  * @param {Map<string, string>} compMap 
  * @returns 
  */
-const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
+const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
   const info = readFileSync(path, 'utf-8')
   const sfc = getsfc(info)
   const { template, script, styles} = sfc
@@ -36,6 +37,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
    * @param {Set<string>|null} scopes
    */
   function recordState(state, checkBool, scopes = null) {
+    if (sw === 0) return
     let type = TYPE_STRING
     const varReg = /^[0-9a-zA-Z_]+/
     const firstVar = state.match(varReg)?.[0]
@@ -50,6 +52,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
     }
     if (checkBool) {
       if (state === firstVar || state === ('!' + state)) {
+        if (switchOff(sw, ENUM_TEMPLATE_RECORD_ON.state)) return
         type = TYPE_BOOL
         return record()
       }
@@ -82,6 +85,11 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
       if (isArray) {
         type = TYPE_ARR
       }
+      if (type === TYPE_FUNC) {
+        if (switchOff(sw, ENUM_TEMPLATE_RECORD_ON.method)) return
+      } else {
+        if (switchOff(sw, ENUM_TEMPLATE_RECORD_ON.state)) return
+      }
       record()
     }
   }
@@ -90,7 +98,9 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
    * @param {string} key 
    */
   function recerdStateByType(key, type) {
+    if (sw === 0) return
     if (type === TYPE_FUNC) {
+      if (switchOff(sw, ENUM_TEMPLATE_RECORD_ON.method)) return
       if (/\./.test(key)) return
       if (/\$emit/.test(key)) return
       if (/\=/.test(key)) return
@@ -99,6 +109,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
       key = key.split('.')[0]
     }
     key = key.replace(/\(.*\)/, '')
+    if (switchOff(sw, ENUM_TEMPLATE_RECORD_ON.state) && type !== TYPE_FUNC) return
     fileStates.add(`${key}:${type}`)
   }
   const compileTemplate2Wxml = () => {
@@ -171,10 +182,13 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
     }
     function propIf(prop, scopes) {
       // proptype 7
-      if (!['if', 'else-if'].includes(prop.name)) return ''
+      if (!['if', 'else-if', 'else'].includes(prop.name)) return ''
       let key = 'if'
       if (prop.name === 'else-if') {
         key = 'elif'
+      } else if (prop.name === 'else') {
+        key = 'else'
+        return 'wx:else'
       }
       const value = propCont(prop)
       recordState(value, true, scopes)
@@ -214,9 +228,22 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
       // proptype 7
       if (prop.name !== 'bind') return ''
       if (prop.rawName === ':key') return ''
-      const value = propCont(prop)
+      let value = propCont(prop)
       recordState(value, false, scopes)
-      return `${propBindKey(prop)}="{{${value}}}"`
+      
+      if (/^\{/.test(value)) {
+        debugger
+        if (prop.rawName === ':style') {
+          value = objectStyleParse(value)
+        } else {
+          value = parseObj(value)
+        }
+        
+        debugger
+      } else {
+        value = `{{${value}}}`
+      }
+      return `${propBindKey(prop)}="${value}"`
     }
     function propStaticAttr(prop) {
       // proptype 6
@@ -340,7 +367,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx) => {
  * 
  * @param {string} path 
  */
-export const createComponentFiles = async (path, compMap, outputPath, px2rpx, rem2rpx) => {
+export const createComponentFiles = async (path, compMap, outputPath, px2rpx, rem2rpx, sw = 0) => {
   const pathReg = /[\\\\]|[\/]/
   const pathArr = path.split(pathReg);
   const fileName = pathArr.slice(-1)[0];
@@ -349,7 +376,7 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
   // const __dirname = fileURLToPath(import.meta.url)
   const fullPath = resolve(curPath, path)
   // console.log(curPath, fullPath, cwd)
-  const { wxml, wxss, states, methods, components } = await compileVueFile(fullPath, compMap, px2rpx, rem2rpx)
+  const { wxml, wxss, states, methods, components } = await compileVueFile(fullPath, compMap, px2rpx, rem2rpx, sw)
   // debugger
   
   const createDir = () => {
@@ -387,3 +414,10 @@ export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')
 }
 
+function objectStyleParse(oStr) {
+  return oStr.slice(1, -1).split(',').map(i => i.trim())
+  .map(kv => {
+    const [k, v] = kv.split(':');
+    return `${k.trim()}:{{${v.trim()}}}`
+  }).join(';')
+}

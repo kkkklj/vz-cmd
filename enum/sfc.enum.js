@@ -11,3 +11,10 @@ export const ENUM_NODE_TYPE = {
   /** 模板里响应式状态 */
   state: 5,
 }
+
+export const ENUM_TEMPLATE_RECORD_ON = {
+  /** 记录状态 */
+  state: 1,
+  /** 记录方法 */
+  method: 2
+}
