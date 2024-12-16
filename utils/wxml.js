@@ -40,7 +40,8 @@ const compileTpl = function(tpl) {
 export const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
 .map(kv => {
     const [k, v] = kv.split(':');
-    return `{{${v}?'${k}':''}}`
+    
+    return `{{${v}?'${k.replace(/^('|"|`)/,'').replace(/('|"|`)$/,'')}':''}}`
 }).join(' ');
 export const renderBindClass = classBinding => {
     let _bind = '';

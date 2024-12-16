@@ -134,10 +134,10 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
         propEvent(prop)
       }).join(' ')
       const setOriginTag = (classValue) => {
-        return originTagName ? `${originTagName} ${classValue}` : classValue
+        return originTagName ? `${originTagName}${classValue ? ' ' + classValue : ''}` : classValue
       }
-      const classAttr = classValue ? `class="${setOriginTag(classValue)}"` : ''
-      attrs = classAttr + (attrs ? ' ' : '') + attrs
+      const classAttr = classValue ? `class="${setOriginTag(classValue)}"` : `class="${setOriginTag('')}"`
+      attrs = classAttr + ((attrs && classAttr) ? ' ' : '') + attrs
       return attrs
     }
     function staticClass(prop) {
@@ -152,7 +152,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
      * @returns {string}
      */
     function propCont(prop) {
-      return prop.exp.content
+      return prop.exp?.content || ''
     }
     function propBindKey(prop) {
       if (prop.arg) {
@@ -163,7 +163,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
     function model(prop, scopes) {
       if (!prop.name !== 'model') return ''
       const value = propCont(prop)
-      recordState(value, false, scopes)
+      value && recordState(value, false, scopes)
       return `${propBindKey(prop)}="{{${value}}}"`
     }
     function propEvent(prop) {
@@ -177,7 +177,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
         click: 'tap'
       }
       const value = propCont(prop)
-      recerdStateByType(value, TYPE_FUNC)
+      value && recerdStateByType(value, TYPE_FUNC)
       return `${prefix}${evMap[key] || key}="${value}"`
     }
     function propIf(prop, scopes) {
@@ -232,14 +232,11 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
       recordState(value, false, scopes)
       
       if (/^\{/.test(value)) {
-        debugger
         if (prop.rawName === ':style') {
           value = objectStyleParse(value)
         } else {
           value = parseObj(value)
         }
-        
-        debugger
       } else {
         value = `{{${value}}}`
       }
