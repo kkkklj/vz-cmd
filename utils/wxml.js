@@ -37,10 +37,9 @@ const compileTpl = function(tpl) {
  * @param {String} staticClass 
  * @param {String} classBinding 
  */
-export const parseObj = oStr => oStr.slice(1, -1).split(',').map(i => i.trim())
+export const parseObj = oStr => oStr.trim().replace(/\,$/,'').slice(1, -1).split(',').map(i => i.trim()).filter(i => i)
 .map(kv => {
     const [k, v] = kv.split(':');
-    
     return `{{${v}?'${k.replace(/^('|"|`)/,'').replace(/('|"|`)$/,'')}':''}}`
 }).join(' ');
 export const renderBindClass = classBinding => {
@@ -49,12 +48,29 @@ export const renderBindClass = classBinding => {
         if (/^\[/.test(classBinding)) {
             _bind = classBinding.replace(/^\[/,'').replace(/\]$/,'');
             const bindStrs = _bind.split(',');
-            _bind = bindStrs.reduce((val, str) => {
+            let itemIsObj = false
+            /** ['info', {aa: A || B, bb: C && D}] */
+            const dealArrObj = bindStrs.reduce((list, item) => {
+                item = item.trim()
+                if (itemIsObj) {
+                    const lastIndex = list.length - 1
+                    list[lastIndex] = list[lastIndex] + ',' + item
+                } else if (/^\{/.test(item)) {
+                    itemIsObj = true
+                    list.push(item)
+                } else if (/\}$/.test(item)) {
+                    itemIsObj = false
+                } else {
+                    list.push(item)
+                }
+                return list
+            }, []).filter(i => i)
+            _bind = dealArrObj.reduce((val, str) => {
                 str = str.trim();
-                if (/(\&|\?)/.test(str)) {
-                    val += ` {{${str}}}`
-                } else if (/^\{/.test(str)) {
+                if (/^\{/.test(str)) {
                     val += ` ${parseObj(str)}`
+                } else if (/(\&|\?)/.test(str)) {
+                    val += ` {{${str}}}`
                 } else if (/\$\{.*\}/.test(str)) {
                     val += ' ' + str.replaceAll('${','{{').replaceAll('}','}}')
                 } else {
