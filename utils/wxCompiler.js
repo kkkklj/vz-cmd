@@ -152,7 +152,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
      * @returns {string}
      */
     function propCont(prop) {
-      return prop.exp?.content || ''
+      return prop.exp?.content?.split(/\n/).map(i => i.trim()).join(' ') || ''
     }
     function propBindKey(prop) {
       if (prop.arg) {
@@ -300,7 +300,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
       }
       return temp(
         node.children?.length 
-        ? node.children.map(childNode => nodeCompiler(childNode, scopes)).join('\n')
+        ? node.children.map(childNode => nodeCompiler(childNode, scopes)).join('')
         : ''
       );
     }
