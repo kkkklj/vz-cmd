@@ -29,7 +29,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
   const info = readFileSync(path, 'utf-8')
   const sfc = getsfc(info)
   const { template, script, styles} = sfc
-  const fileStates = new Set()
+  let fileStates = new Set()
   /**
    * 
    * @param {string} state 
@@ -104,6 +104,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
       if (/\./.test(key)) return
       if (/\$emit/.test(key)) return
       if (/\=/.test(key)) return
+      if (/\+\+/.test(key)) return
     }
     if (type === TYPE_ARR) {
       key = key.split('.')[0]
@@ -311,11 +312,12 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw) => {
   let wxss = ''
   for (let index = 0; index < styles.length; index++) {
     const style = styles[index];
-    const output = await compileScss(style.content, px2rpx, rem2rpx)
+    const output = await compileScss(style.content, px2rpx, rem2rpx, path)
     wxss += output +'\r\n'
   }
   const wxml = compileTemplate2Wxml()
   const states = []
+  fileStates = filterSameState(fileStates)
   fileStates.forEach(value => {
     const [key, type] = value.split(':')
     if (type === TYPE_FUNC) return
@@ -417,4 +419,33 @@ function objectStyleParse(oStr) {
     const [k, v] = kv.split(':');
     return `${k.trim()}:{{${v.trim()}}}`
   }).join(';')
+}
+
+/**
+ * 
+ * @param {Set<string>} fileStates 
+ */
+function filterSameState(fileStates) {
+  const priority = [TYPE_FUNC, TYPE_ARR, TYPE_OBJECT, TYPE_BOOL, TYPE_NUMBER, TYPE_STRING]
+  const arr = []
+  fileStates.forEach(state => {
+    const [k, type] = state.split(':')
+    const findItem = arr.find(i => i.key === k)
+    if (findItem) {
+      const mostPriority = Math.min(priority.indexOf(findItem.type), priority.indexOf(type))
+      if (mostPriority < 0) {
+        throw 'mostPriority异常'
+      }
+      findItem.type = priority[mostPriority]
+    } else {
+      arr.push({
+        key: k,
+        type
+      })
+    }
+  })
+  return arr.reduce((recordSet, item) => {
+    recordSet.add(`${item.key}:${item.type}`)
+    return recordSet
+  }, new Set())
 }
