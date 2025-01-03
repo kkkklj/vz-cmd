@@ -1,6 +1,6 @@
 import { parse, compileTemplate } from '@vue/compiler-sfc'
 import { readFileSync, writeFileSync, existsSync, unlinkSync, statfsSync, mkdir, mkdirSync, stat } from 'fs';
-import { parseObj, renderBindClass, tagMap } from './wxml.js';
+import { isTernary, parseObj, renderBindClass, tagMap } from './wxml.js';
 import { ENUM_NODE_TYPE, ENUM_TEMPLATE_RECORD_ON } from '../enum/sfc.enum.js';
 import { compileScss } from './wxss.js';
 import { join, resolve } from 'path';
@@ -412,12 +412,18 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
 export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')
 }
-
-function objectStyleParse(oStr) {
+function toKebabCase(str) {
+  return str.replace(/([A-Z])/g, val => '-' + val.toLowerCase()).toLowerCase();
+}
+/** 将vue中的style对象转换为小程序的字符串+表达式 */
+export function objectStyleParse(oStr) {
   return oStr.slice(1, -1).split(',').map(i => i.trim())
   .map(kv => {
-    const [k, v] = kv.split(':');
-    return `${k.trim()}:{{${v.trim()}}}`
+    let [k, ...vals] = kv.split(':');
+    const propVals = [...vals]
+    let v = propVals.join(':')
+    v = v.trim()
+    return `${toKebabCase(k.trim())}:{{${v}}}`
   }).join(';')
 }
 

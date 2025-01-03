@@ -32,16 +32,36 @@ const compileTpl = function(tpl) {
     let output = compiler.compile(tpl, { comments: true, preserveWhitespace: false, shouldDecodeNewlines: true })
     return output
 }
+const isObjType = str => /^\{/.test(str) && /\}$/.test(str)
+export const isTernary = str => /(\&|\?)/.test(str)
 /**
  * 
  * @param {String} staticClass 
  * @param {String} classBinding 
  */
-export const parseObj = oStr => oStr.trim().replace(/\,$/,'').slice(1, -1).split(',').map(i => i.trim()).filter(i => i)
-.map(kv => {
-    const [k, v] = kv.split(':');
-    return `{{${v}?'${k.replace(/^('|"|`)/,'').replace(/('|"|`)$/,'')}':''}}`
-}).join(' ');
+export const parseObj = oStr => {
+    let flag = false
+    if (oStr.trim() === '{ notext: lotteryTextShow },liveSetup.customClassName') {
+        flag = true
+    }
+    oStr = oStr.trim()
+    .replace(/\,$/,'')// 数组对象、对象对象最后一个元素带点去除
+    if(isObjType(oStr)) {// 对象头尾的花括号去除
+        oStr = oStr.slice(1, -1)
+    }
+    oStr = oStr.split(',').map(i => i.trim()).filter(i => i)
+    .map(kv => {
+        // 数组里的对象， raw:[{ notext: lotteryTextShow }, liveSetup.customClassName]
+        if (isObjType(kv)) return parseObj(kv)
+        const [k, v] = kv.split(':');
+        const key = k.replace(/^('|"|`)/,'').replace(/('|"|`)$/,'')
+        if (v === undefined) { // 没有值key本身就是值
+            return `{{${key}}}`
+        }
+        return `{{ ${v.trim()} ? '${key.trim()}' : ''}}`
+    }).join(' ');
+    return oStr
+}
 export const renderBindClass = classBinding => {
     let _bind = '';
     if (classBinding) {
@@ -69,7 +89,7 @@ export const renderBindClass = classBinding => {
                 str = str.trim();
                 if (/^\{/.test(str)) {
                     val += ` ${parseObj(str)}`
-                } else if (/(\&|\?)/.test(str)) {
+                } else if (isTernary(str)) {
                     val += ` {{${str}}}`
                 } else if (/\$\{.*\}/.test(str)) {
                     val += ' ' + str.replaceAll('${','{{').replaceAll('}','}}')
