@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import chalk from 'chalk';
-import {Command} from 'commander'
+import {Command, Argument, Option} from 'commander'
 import _process from "child_process"
 import {$} from 'execa';
 import {Regexps, api} from './config.js'
@@ -16,7 +16,7 @@ import { KEYS_STAGED } from './enum/configKey.js';
 import { wxml3Compiler } from './utils/wxml2.js';
 import { createComponentFiles } from './utils/wxCompiler.js';
 import { compilerVueComponents } from './utils/batchCompiler.js';
-import { batchDelBranch } from './utils/git.js';
+import { batchCreateBranch, batchDelBranch } from './utils/git.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -447,8 +447,19 @@ program.command('vue2wx')
 })
 
 program.command('branch')
-.argument('[args...]', 'args')
-.action(async(args) => {
-    batchDelBranch()
+// .argument('[args...]', 'args')
+.option('-d, --del <time>')
+.action(async(options) => {
+    console.log('options', options)
+    if (options.del && !isNaN(Number(options.del))) {
+        batchDelBranch(Number(options.del))
+    }
+    // batchDelBranch()
 })
+// Command.arguments()
+// program.command('debug')
+// .action(() => {
+//     batchCreateBranch()
+// })
+
 program.parse();

@@ -15,6 +15,10 @@ test('renderBindClass: 数组多属性对象转换', () => {
   expect(renderBindClass(`[{ notext: lotteryTextShow, a:b }]`))
   .toBe(`{{ lotteryTextShow ? 'notext' : ''}} {{ b ? 'a' : ''}}`)
 })
+test('renderBindClass: 值为类名', () => {
+  expect(renderBindClass(`[qwe, asd]`)).toBe(`{{qwe}} {{asd}}`)
+  expect(renderBindClass(`{qwe}`)).toBe(`{{qwe}}`)
+})
 
 test('renderBindClass: 数组多条件判断', () => {
   expect(renderBindClass(`['info', {aa: A || B, bb: C && D}]`))
@@ -40,3 +44,4 @@ test('objectStyleParse: 多key', () => {
   expect(objectStyleParse(`{backgroudColor:a?'#fff':'#000',zIndex:a&&b||c,marginLeft:value}`))
   .toBe(`backgroud-color:{{a?'#fff':'#000'}};z-index:{{a&&b||c}};margin-left:{{value}}`)
 })
+

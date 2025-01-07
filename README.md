@@ -24,6 +24,15 @@ vz git -ps "fix: 改了个bug" .
 vz git -mgt test dev
 ```
 
+### branch 命令
+
+vz branch [-d<时间戳>]
+
+- -d: --del 删除的时间戳，会删除时间戳之前的分支
+```shell
+vz branch -d1704067200000
+```
+
 ### config 命令
 
 会在用户目录中创建vz_cmd_config.json文件保存配置信息
