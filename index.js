@@ -450,7 +450,6 @@ program.command('branch')
 // .argument('[args...]', 'args')
 .option('-d, --del <time>')
 .action(async(options) => {
-    console.log('options', options)
     if (options.del && !isNaN(Number(options.del))) {
         batchDelBranch(Number(options.del))
     }

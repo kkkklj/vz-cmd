@@ -1,5 +1,4 @@
 import { $ } from "execa"
-import _process from "child_process"
 import chalk from "chalk"
 import { writeFileSync } from "fs"
 const three_month = 7776000000
@@ -11,8 +10,8 @@ export const batchDelBranch = async (delBef = new Date().getTime() - 1000 * 60 *
   const list = result.stdout.split(/\n|\r/).map(i => i.trim())
   /**
    * @type {{
-   * name:string
-   * timeStamp: number
+   *  name:string
+   *  timeStamp: number
    * }[]}
    */
   const delList = []
@@ -39,9 +38,12 @@ export const batchDelBranch = async (delBef = new Date().getTime() - 1000 * 60 *
   for (let index = 0; index < delList.length; index++) {
     const element = delList[index];
     if (/^remotes\//.test(element.name)) {
-      const remoteName = element.name.replace(/^remotes\/origin\//, '')
+      let [originName] = element.name.match(/(?<=(remotes\/))[a-zA-Z0-9]+\//) || []
+      if (!originName) continue
+      originName = originName.replace(/\/$/,'')
+      const remoteName = element.name.replace(RegExp(`^remotes\\/${originName}\\/`), '')
       if (remoteName === 'master') continue
-      await $`git push origin -d ${remoteName}`
+      await $`git push ${originName} -d ${remoteName}`
     } else {
       await $`git branch -D ${element.name}`
     }
