@@ -107,3 +107,27 @@ function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
     css = css.replaceCssRem(/(\d+)(\.\d+)?rem/, rem2rpx)
     return css
 }
+/**
+ * 
+ * @param {string} data 
+ * @returns 
+ */
+export function wx2Vmin(data) {
+    String.prototype.replaceCssUnite = function(reg, multiple, unite) {
+        const it = this.matchAll(RegExp(reg,'g'));
+        let result = it.next();
+        let str = this;
+        let offset = 0;
+        while(!result.done) {
+            const value = result.value[0];
+            const index = result.value.index + offset;
+            const resultVal = (parseFloat(value) * multiple).toFixed(2)
+            str = str.slice(0, index) + resultVal + 'vmin' + str.slice(index + value.length)
+            offset += (resultVal + '').length - (parseFloat(value) + '').length + (4 - unite.length);
+            result = it.next();
+        }
+        return str
+    }
+    return data.replaceCssUnite(/(\d+)(\.\d+)?rpx/, 100/750, 'rpx')
+    .replaceCssUnite(/(\d+)(\.\d+)?vw/, 1, 'vw')
+}

@@ -8,7 +8,7 @@ import * as utils from './utils/utils.js'
 import request from './utils/request.js'
 import { copyFileSync, createReadStream, createWriteStream, existsSync, readFileSync, statSync, unlink, unlinkSync, writeFileSync } from 'fs';
 import { wxml2Compiler } from './utils/wxml.js';
-import { scssParse } from './utils/wxss.js';
+import { scssParse, wx2Vmin } from './utils/wxss.js';
 import { homedir } from 'os';
 import { join } from 'path';
 import { fileConfig } from './utils/fileConfig.js';
@@ -155,7 +155,7 @@ program.command('ls')
 .argument('[args...]', 'args')
 .option('-f, --filter','过滤文件',)//根据当前目录的配置文件
 .option('-m, --match <regexp>', '匹配文件')//根据input
-.option('-c, --copy', '复制文件')
+.option('-c, --copy <path>', '复制文件')
 .option('-o, --output', '输出为js')
 .option('-h, --http', '尝试请求')
 .action(async (args, options) => {
@@ -167,7 +167,7 @@ program.command('ls')
     }
     if (options.copy) {
         list.forEach(name => {
-            copyFileSync(`./${name}`, args[0] + '/' + name);
+            copyFileSync(`./${name}`, options.copy + '/' + name);
         })
     }
     console.log(chalk.greenBright('ls查询到的文件为:\n',list.join('\n')))
@@ -320,6 +320,18 @@ program.command('wxss')
     scssParse(args[0], {px2rpx, rem2rpx})
 })
 
+program.command('wx2Vmin')
+.argument('[args...]', 'args')
+.action(async(args) => {
+    let info = readFileSync(args[0], 'utf-8');
+    info = wx2Vmin(info);
+    const fileNameArr = args[0].split('.');
+    const nName = fileNameArr.slice(0,-1).join('.') +'.next' +'.' + fileNameArr.slice(-1)[0]
+    if (existsSync(nName)) {
+        unlinkSync(nName)
+    }
+    writeFileSync(nName, info);
+})
 /**
  * @todo 存储命令行 .bashrc部分处理
  */

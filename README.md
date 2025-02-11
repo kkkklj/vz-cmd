@@ -91,14 +91,14 @@ vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx]
 
 ### ls 命令
 
-vz ls [-mco] [args...]
+vz ls [-mo] --copy="filePath" [args...]
 
 #### 选项可以拼接
 
 参数优先级根据以下选项（需要你的终端能使用linux命令，至少得能使用ls查询文件）
 
 1. -m: 通过正则匹配过滤文件，字符串会作为js中的RegExp函数的参数传入生成正则
-2. -c：过滤后的文件复制到目标文件夹，支持相对路径
+2. --copy：过滤后的文件复制到目标文件夹，支持相对路径
 3. -o: 过滤后文件输出为js数组
 4. -h: 用于检查文件在服务器中是否存在，需要通过vz config set checkUrl="xxx"设置地址前缀
 
