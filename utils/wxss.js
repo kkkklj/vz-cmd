@@ -58,6 +58,7 @@ export async function compileScss(input, px2rpx, rem2rpx, path) {
         throw error
     }
 }
+// todo 改成replace
 function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
     String.prototype.replaceCssPx = function(reg, multiple) {
         const it = this.matchAll(RegExp(reg,'g'));
@@ -113,21 +114,11 @@ function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
  * @returns 
  */
 export function wx2Vmin(data) {
-    String.prototype.replaceCssUnite = function(reg, multiple, unite) {
-        const it = this.matchAll(RegExp(reg,'g'));
-        let result = it.next();
-        let str = this;
-        let offset = 0;
-        while(!result.done) {
-            const value = result.value[0];
-            const index = result.value.index + offset;
-            const resultVal = (parseFloat(value) * multiple).toFixed(2)
-            str = str.slice(0, index) + resultVal + 'vmin' + str.slice(index + value.length)
-            offset += (resultVal + '').length - (parseFloat(value) + '').length + (4 - unite.length);
-            result = it.next();
-        }
-        return str
+    String.prototype.replaceCssUnite = function(reg, multiple) {
+        return this.replace(RegExp(reg,'g'), value => {
+            return +(parseFloat(value) * multiple).toFixed(2) + 'vmin'
+        })
     }
-    return data.replaceCssUnite(/(\d+)(\.\d+)?rpx/, 100/750, 'rpx')
-    .replaceCssUnite(/(\d+)(\.\d+)?vw/, 1, 'vw')
+    return data.replaceCssUnite(/(\d+)(\.\d+)?rpx/, 100/750)
+    .replaceCssUnite(/(\d+)(\.\d+)?vw/, 1)
 }

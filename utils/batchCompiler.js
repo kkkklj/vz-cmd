@@ -1,7 +1,8 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'fs'
 import { join, resolve } from 'path'
 import { createComponentFiles } from './wxCompiler.js'
 import { writeFile } from './io.js'
+import { wx2Vmin } from './wxss.js'
 export async function readSomething(path, fileBack, filterFn) {
   if (!existsSync(path)) {
     throw '路径不存在'
@@ -69,6 +70,42 @@ export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx,
       createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx, sw)
     } else if (isJsFile(curPath)) {
       writeFile(curPath, readFileSync(curPath, 'utf-8'))
+    }
+  })
+}
+
+export async function batchVmim(path) {
+  readSomething(path, (curPath, allFilesPath) => {
+    const pathReg = /[\\\\]|[\/]/
+    let outputPath = join(resolve('./'), 'output', curPath)
+    const createDir = () => {
+      const create = (dirPath) => {
+        const isExist = existsSync(dirPath)
+        if (isExist) return
+        mkdirSync(dirPath)
+      }
+      const outArr = outputPath.split(pathReg)
+      outArr.reduce((cur, item, index) => {
+        if (index === 0) {
+          return item
+        } else {
+          let dirName = item
+          if (index === outArr.length - 1) {
+            return
+          }
+          const p = join(cur, dirName)
+          create(p)
+          return join(cur, dirName)
+        }
+      }, '')
+      
+    }
+    createDir()
+    const info = readFileSync(resolve(resolve('./'), curPath), 'utf-8');
+    if (/(\.wxss|\.scss)$/.test(curPath)) {
+      writeFile(outputPath, wx2Vmin(info))
+    } else {
+      writeFile(outputPath, info)
     }
   })
 }

@@ -15,7 +15,7 @@ import { fileConfig } from './utils/fileConfig.js';
 import { KEYS_STAGED } from './enum/configKey.js';
 import { wxml3Compiler } from './utils/wxml2.js';
 import { createComponentFiles } from './utils/wxCompiler.js';
-import { compilerVueComponents } from './utils/batchCompiler.js';
+import { batchVmim, compilerVueComponents } from './utils/batchCompiler.js';
 import { batchCreateBranch, batchDelBranch } from './utils/git.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
@@ -322,7 +322,11 @@ program.command('wxss')
 
 program.command('wx2Vmin')
 .argument('[args...]', 'args')
-.action(async(args) => {
+.option('-a, --all')
+.action(async(args, options) => {
+    if (options.all) {
+        return batchVmim(args[0])
+    }
     let info = readFileSync(args[0], 'utf-8');
     info = wx2Vmin(info);
     const fileNameArr = args[0].split('.');

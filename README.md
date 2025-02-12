@@ -64,6 +64,14 @@ vz wxss [-p2 -r200] filename.scss
 1. -p：--px2rpx px转换倍数
 1. -r：--rem2rpx rem转换倍数
 
+### wx2Vmin
+
+vz wx2Vmin file [-a]
+
+将文件的vw和rpx转换成vmin
+
+1. -a: 批量修改目录
+
 ### vue2wx 命令（采用vue3的编译器，可以编译整个文件了）
 
 用于将整个vue文件转换为微信小程序组件，如果参数是目录，将会批量转换目录中的vue文件并生成小程序组件目录
