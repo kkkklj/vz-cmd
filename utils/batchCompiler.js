@@ -77,7 +77,7 @@ export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx,
 export async function batchVmim(path) {
   readSomething(path, (curPath, allFilesPath) => {
     const pathReg = /[\\\\]|[\/]/
-    let outputPath = join(resolve('./'), 'output', curPath)
+    let outputPath = join(resolve('./'), curPath)
     const createDir = () => {
       const create = (dirPath) => {
         const isExist = existsSync(dirPath)
@@ -100,12 +100,10 @@ export async function batchVmim(path) {
       }, '')
       
     }
-    createDir()
+    // createDir()
     const info = readFileSync(resolve(resolve('./'), curPath), 'utf-8');
     if (/(\.wxss|\.scss)$/.test(curPath)) {
       writeFile(outputPath, wx2Vmin(info))
-    } else {
-      writeFile(outputPath, info)
-    }
+    } 
   })
 }
