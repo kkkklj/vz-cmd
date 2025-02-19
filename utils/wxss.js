@@ -58,54 +58,32 @@ export async function compileScss(input, px2rpx, rem2rpx, path) {
         throw error
     }
 }
-// todo 改成replace
-function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
-    String.prototype.replaceCssPx = function(reg, multiple) {
-        const it = this.matchAll(RegExp(reg,'g'));
-        let result = it.next();
-        let str = this;
-        let offset = 0;
-        while(!result.done) {
-            const value = result.value[0];
-            const index = result.value.index + offset;
-            str = str.slice(0, index) + (parseInt(value) * multiple) + 'r' + str.slice(index + value.length)
-            offset += (value * multiple + '').length - (value + '').length + 1;
-            result = it.next();
-        }
-        return str
+/**
+ * 
+ * @param {string} data 
+ * @param {string} unit 
+ * @param {RegExp} reg 
+ * @param {number} convert 
+ */
+export function unitHandler(data, unit, reg, convert) {
+    return data.replace(RegExp(reg, 'g'), value => {
+        return +(parseFloat(value) * convert).toFixed(2) + unit
+    })
+}
+export function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
+    String.prototype.replaceCssPx = function(reg) {
+        return unitHandler(this, 'rpx', reg, px2rpx)
     }
-    String.prototype.replaceCssRem = function(reg, multiple) {
-        const it = this.matchAll(RegExp(reg,'g'));
-        let result = it.next();
-        let str = this;
-        let offset = 0;
-        while(!result.done) {
-            const value = result.value[0];
-            const index = result.value.index + offset;
-            str = str.slice(0, index) + Math.round(parseFloat(value) * multiple) + 'rpx' + str.slice(index + value.length)
-            offset += (Math.round(parseFloat(value) * multiple) + '').length - (parseFloat(value) + '').length;
-            result = it.next();
-        }
-        return str
+    String.prototype.replaceCssRem = function(reg) {
+        return unitHandler(this, 'rpx', reg, rem2rpx)
     }
     /**
      * 
      * @param {*[]} list 
      */
-    // String.prototype.replaceHtmlTag = function(list) {
-    //     let str = this
-    //     list.forEach(item => {
-    //        str = str.replace(RegExp(`(?<=[A-Za-z]\\ )${item}(?=[^\\n]*\\})`), `.${item}`)
-    //     })
-    //     return str
-    // }
     let css = data.css
-    .replaceCssPx('\\d{3}(?=px)',px2rpx)
-    .replaceCssPx('\\d{2}(?=px)',px2rpx)
-    .replaceCssPx('\\d{1}(?=px)',px2rpx)
-    // .replaceHtmlTag(['img','div', 'span', 'p', 'i', 'var', 'h1', 'h2', 'h3', 'h4', 'h5', 'ul', 'ol', 'li', 'dl', 'dt', 'strong', 'header', 'article', 'footer', 'nav', 'section'])
-    
-    css = css.replaceCssRem(/(\d+)(\.\d+)?rem/, rem2rpx)
+    .replaceCssPx(/(\d+)(\.\d+)?px/)
+    .replaceCssRem(/(\d+)(\.\d+)?rem/)
     return css
 }
 /**
@@ -115,9 +93,7 @@ function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
  */
 export function wx2Vmin(data) {
     String.prototype.replaceCssUnite = function(reg, multiple) {
-        return this.replace(RegExp(reg,'g'), value => {
-            return +(parseFloat(value) * multiple).toFixed(2) + 'vmin'
-        })
+        return unitHandler(this, 'vmin', reg, multiple)
     }
     return data.replaceCssUnite(/(\d+)(\.\d+)?rpx/, 100/750)
     .replaceCssUnite(/(\d+)(\.\d+)?vw/, 1)
