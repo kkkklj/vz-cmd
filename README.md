@@ -1,5 +1,7 @@
 # 命令行工具
 
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/kkkklj/vz-cmd)
+
 安装：npm i -g vz-cmd
 
 ### git 命令
