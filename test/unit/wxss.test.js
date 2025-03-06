@@ -21,6 +21,10 @@ test('rem小数带0', () => {
   expect(replaceUnit({css:'width: 0.220rem;'}))
   .toBe('width: 44rpx;')
 })
+test('rem小数点开头', () => {
+  expect(replaceUnit({css:'width: .220rem;'}))
+  .toBe('width: 44rpx;')
+})
 test('vmin单位转换', () => {
   expect(wx2Vmin('width: 11.2rpx'))
   .toBe('width: 1.49vmin')

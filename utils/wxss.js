@@ -70,6 +70,10 @@ export function unitHandler(data, unit, reg, convert) {
         return +(parseFloat(value) * convert).toFixed(2) + unit
     })
 }
+function getUnitReg(name) {
+    if (!name) throw '缺少匹配单位'
+    return RegExp('\\.?\\d+(\\.\\d+)?' + name)
+}
 export function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
     String.prototype.replaceCssPx = function(reg) {
         return unitHandler(this, 'rpx', reg, px2rpx)
@@ -82,8 +86,8 @@ export function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
      * @param {*[]} list 
      */
     let css = data.css
-    .replaceCssPx(/(\d+)(\.\d+)?px/)
-    .replaceCssRem(/(\d+)(\.\d+)?rem/)
+    .replaceCssPx(getUnitReg('px'))
+    .replaceCssRem(getUnitReg('rem'))
     return css
 }
 /**
@@ -95,6 +99,6 @@ export function wx2Vmin(data) {
     String.prototype.replaceCssUnite = function(reg, multiple) {
         return unitHandler(this, 'vmin', reg, multiple)
     }
-    return data.replaceCssUnite(/(\d+)(\.\d+)?rpx/, 100/750)
-    .replaceCssUnite(/(\d+)(\.\d+)?vw/, 1)
+    return data.replaceCssUnite(getUnitReg('rpx'), 100/750)
+    .replaceCssUnite(getUnitReg('vw'), 1)
 }
