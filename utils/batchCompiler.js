@@ -42,7 +42,7 @@ export async function readSomething(path, fileBack, filterFn) {
  * @param {string} path 
  * @param {*[]} allFilesPath 
  */
-export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx, isFull, sw = 0) {
+export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx, isFull, sw = 0, isVmin = false) {
   const isVueFile = path => /\.vue$/.test(path)
   const isJsFile = path => /\.js/.test(path)
   readSomething(path, (curPath, allFilesPath) => {
@@ -66,8 +66,7 @@ export async function compilerVueComponents(path, bashUrl = '', px2rpx, rem2rpx,
         const targetDir = path.split('/').slice(0, -1).join('/')
         outputPath = join(targetDir, 'output', fullPath.replace(targetDir, '').split('/').join('/'))
       }
-      
-      createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx, sw)
+      createComponentFiles(curPath, compMap, outputPath, px2rpx, rem2rpx, sw, isVmin)
     } else if (isJsFile(curPath)) {
       writeFile(curPath, readFileSync(curPath, 'utf-8'))
     }

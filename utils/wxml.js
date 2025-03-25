@@ -15,6 +15,7 @@ export const tagMap = {
     'main': 'view',
     'nav': 'view',
     'section': 'view',
+    'aside': 'view',
     'ul': 'view',
     'li': 'view',
     'ol': 'view',
@@ -40,10 +41,6 @@ export const isTernary = str => /(\&|\?)/.test(str)
  * @param {String} classBinding 
  */
 export const parseObj = oStr => {
-    let flag = false
-    if (oStr.trim() === '{ notext: lotteryTextShow },liveSetup.customClassName') {
-        flag = true
-    }
     oStr = oStr.trim()
     .replace(/\,$/,'')// 数组对象、对象对象最后一个元素带点去除
     if(isObjType(oStr)) {// 对象头尾的花括号去除
@@ -108,6 +105,8 @@ export const renderBindClass = classBinding => {
             },'').trim();
         } else if (/^\{/.test(classBinding)) {
             _bind = parseObj(classBinding).trim();
+        } else {
+            _bind = `{{${classBinding}}}`
         }
     }
     return _bind;

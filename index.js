@@ -449,6 +449,7 @@ program.command('vue2wx')
 .option('-p, --px2rpx <time>')
 .option('-r, --rem2rpx <time>')
 .option('-o, --on <switch>')
+.option('--vmin', '最终转换为vmin')
 .action(async(args, options) => {
     // createComponentFiles(args[0])
     let { bashUrl } = options
@@ -458,7 +459,7 @@ program.command('vue2wx')
     bashUrl = bashUrl || ''
     bashUrl = bashUrl ? '/' + bashUrl.replace(/^\//, '') : ''
     args.forEach(target => {
-        compilerVueComponents(target, bashUrl, px2rpx, rem2rpx, false, sw)
+        compilerVueComponents(target, bashUrl, px2rpx, rem2rpx, false, sw, options.vmin)
     })
 })
 

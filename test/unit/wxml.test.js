@@ -25,6 +25,11 @@ test('renderBindClass: 数组多条件判断', () => {
   .toBe(`info {{ A || B ? 'aa' : ''}} {{ C && D ? 'bb' : ''}}`)
 })
 
+test('renderBindClass: 单变量', () => {
+  expect(renderBindClass(`promotionType`))
+  .toBe(`{{promotionType}}`)
+})
+
 test('objectStyleParse: 对象三元style', () => {
   expect(objectStyleParse(`{backgroudColor:a?'#fff':'#000'}`))
   .toBe(`backgroud-color:{{a?'#fff':'#000'}}`)

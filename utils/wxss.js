@@ -24,7 +24,7 @@ export const scssParse = (path, {px2rpx, rem2rpx}) => {
  * @param {string} path 
  * @returns 
  */
-export async function compileScss(input, px2rpx, rem2rpx, path) {
+export async function compileScss(input, px2rpx, rem2rpx, path, isVmin) {
     // input = input.replace(/\@import[\ ]+.*scss[\;]*'/g, '')
     try {
         /** @type {*[]} */
@@ -52,7 +52,7 @@ export async function compileScss(input, px2rpx, rem2rpx, path) {
             input = importList.map(filePath => readFileSync(filePath, 'utf-8')).join('\n') + input
         }
         const result = await sass.compileStringAsync(input)
-        return replaceUnit(result, px2rpx, rem2rpx)
+        return replaceUnit(result, px2rpx, rem2rpx, isVmin)
     } catch (error) {
         // console.log('inp-->', input)
         throw error
@@ -74,18 +74,28 @@ function getUnitReg(name) {
     if (!name) throw '缺少匹配单位'
     return RegExp('\\.?\\d+(\\.\\d+)?' + name)
 }
-export function replaceUnit(data, px2rpx = 2, rem2rpx = 200) {
+export function replaceUnit(data, px2rpx = 2, rem2rpx = 200, isVmin = false) {
     String.prototype.replaceCssPx = function(reg) {
         return unitHandler(this, 'rpx', reg, px2rpx)
     }
     String.prototype.replaceCssRem = function(reg) {
         return unitHandler(this, 'rpx', reg, rem2rpx)
     }
+    String.prototype.replaceRemVmin = function(reg) {
+        return unitHandler(this, 'vmin', reg, rem2rpx * 100 / 750)
+    }
+    String.prototype.replacePxVmin = function(reg) {
+        return unitHandler(this, 'vmin', reg, px2rpx * 100 / 750)
+    }
     /**
      * 
      * @param {*[]} list 
      */
-    let css = data.css
+    let css = isVmin ? 
+    data.css
+    .replacePxVmin(getUnitReg('px'))
+    .replaceRemVmin(getUnitReg('rem')) : 
+    data.css
     .replaceCssPx(getUnitReg('px'))
     .replaceCssRem(getUnitReg('rem'))
     return css
