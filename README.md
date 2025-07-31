@@ -78,7 +78,7 @@ vz wx2Vmin file [-a]
 
 用于将整个vue文件转换为微信小程序组件，如果参数是目录，将会批量转换目录中的vue文件并生成小程序组件目录
 
-vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx]
+vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx] [--vmin]
 
 ##### 参数与选项说明
 1. files： 文件或目录，可以多个
@@ -89,6 +89,7 @@ vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx]
     - -o1：记录状态
     - -o2：记录方法
     - -o3：记录状态和方法
+6. --vmin: 单位最终转换成vmin
 ```shell
 # 注意事项
 # 当scss中包含其他的scss文件，并通过@import导入时，如果导入的文件在当前处理的目录中，将会自动导入对应文件，如果不在当前目录中，会报错并停止编译
