@@ -1,6 +1,7 @@
 import { $ } from "execa"
 import chalk from "chalk"
 import { writeFileSync } from "fs"
+import * as utils from '../utils/utils.js'
 const three_month = 7776000000
 export const batchDelBranch = async (delBef = new Date().getTime() - 1000 * 60 * 5) => {
   if (delBef > (new Date().getTime() - three_month)) {
@@ -62,4 +63,38 @@ export const batchCreateBranch = async () => {
     await $`git push --set-upstream origin ${name}`
   }
   $`git checkout master`
+}
+/** 校验当前分支合并是否合法
+ * 非法合并：
+ * test、dev、pre -> 任意分支
+ */
+export const validMergeBranch = (currentBranch, targetBranch) => {
+  if (['test', 'dev', 'pre'].includes(currentBranch)) {
+    throw `非法合并: ${currentBranch} -> ${targetBranch}`
+  }
+}
+
+export async function getGitBranch() {
+  const _version = await $`git --version`;
+  const _v = _version.stdout;
+  const [Ver] = _v.match(/(?<=.*?)[0-9]*(?=\.)/);
+  const [v] = _v.match(/(?<=.*[0-9]*\.)[0-9]*/);
+  if (Number(Ver) < 2 || (Number(Ver) >=2 && Number(v) < 22)) {
+      console.log(chalk.bold.red('err: git版本太低,请升级到2.22以上版本'));
+      throw 'git版本太低';
+  }
+  const branch = await $`git branch --show-current`;
+  return branch.stdout;
+}
+
+export const gitMerge = async (target, current) => {
+  validMergeBranch(current, target)
+  const exec = utils.exec;
+  await exec([
+      'git checkout ' + target,
+      'git pull',
+      'git merge ' + current,
+      'git push',
+      'git checkout ' + current
+  ]).catch(e => console.log(chalk.red('err:',e)))
 }
