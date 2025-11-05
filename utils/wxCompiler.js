@@ -344,8 +344,25 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw, isVmin = false
     const astRes = compileTpl(sfc.template.content)
     const { ast } = astRes
     const { components } = ast
+    const miniVanNoSupport = [
+      'van-badge',
+      'van-form',
+      'van-address-edit',
+      'van-list',
+      'van-popover'
+    ]
     components.forEach(name => {
-      const path = compMap.get(name)
+      let path = ''
+      if (/^van\-/.test(name)) {
+        if (miniVanNoSupport.includes(name)) return
+        path = `@vant/weapp/${name.replace(/^van\-/, '')}/index`
+      } else {
+        name = name.replace(/\-[a-z]/g, val => {
+          return val[1].toUpperCase()
+        })
+        path = compMap.get(name)
+      }
+      
       if (path) {
         _components.push({
           name,

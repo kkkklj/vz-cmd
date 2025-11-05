@@ -53,7 +53,8 @@ export const wxJson = (components) => {
         components.map(item => {
           let path = item.path.replace(/[\\\\]|[\\]|[\/\/]/g, '/').replace(/\.vue$/, '')
           const name = path.split('/').slice(-1)
-          return `"${item.name}": "${path + '/' + name}"`
+          const nameSuffix = /\@vant/.test(item.path) ? '' : '/' + name
+          return `"${item.name}": "${path + nameSuffix}"`
         }).join(',\n      ')
       }
     }
