@@ -376,7 +376,8 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw, isVmin = false
     wxss,
     states,
     methods,
-    components: _components
+    components: _components,
+    scriptContent: script.content
   }
 }
 /**
@@ -392,7 +393,7 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
   // const __dirname = fileURLToPath(import.meta.url)
   const fullPath = resolve(curPath, path)
   // console.log(curPath, fullPath, cwd)
-  const { wxml, wxss, states, methods, components } = await compileVueFile(fullPath, compMap, px2rpx, rem2rpx, sw, isVmin)
+  const { wxml, wxss, states, methods, components, scriptContent } = await compileVueFile(fullPath, compMap, px2rpx, rem2rpx, sw, isVmin)
   // debugger
   
   const createDir = () => {
@@ -424,7 +425,7 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
   writeFile(wxFilePath('wxml'), wxml)
   writeFile(wxFilePath('wxss'), wxss)
   writeFile(wxFilePath('json'), wxJson(components))
-  writeFile(wxFilePath('ts'), wxJs(states, methods))
+  writeFile(wxFilePath('ts'), wxJs(scriptContent))
 }
 export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')

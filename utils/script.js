@@ -58,7 +58,7 @@ function checkIsVueDataAssignmentForThisPath(path) {
   }
   return null
 }
-function compileScript() {
+export function compileVueScript() {
   const blockShouldUpdateComputedMap = new Map()
   const dataMap = new Map()
   const content = readFileSync('D:/test/scriptAst.js', 'utf-8')
@@ -112,12 +112,17 @@ function compileScript() {
         }
       },
       ThisExpression(path) {
-        if (path.findParent(path => path.node === vueComputed)) {
+        if (vueComputed && path.findParent(path => path.node === vueComputed)) {
           if (path.findParent(path => methodComputed.includes(path.node)) && checkThisCanReplace(path, getObjKeys(vueMethods))) {
             !replaceThisPathList.includes(path) && replaceThisPathList.push(path)
           }
           vueDataWatcher.listenVueDataChangeInComputed(path)
-        } else if (path.findParent(path => [vueMethods, vueCreatedHook].includes(path.node))) {
+        } else if (path.findParent(path => {
+          if (vueMethods) return path.node === vueMethods
+          if (vueCreatedHook) return path.node === vueCreatedHook
+          // [vueMethods, vueCreatedHook].includes(path.node)
+          return false
+        })) {
           // this赋值处理，当前的path为this
           const thisAssignmentExpressionPath = checkIsVueDataAssignmentForThisPath(path)
           if (thisAssignmentExpressionPath) { 
@@ -130,7 +135,7 @@ function compileScript() {
       },
       ReturnStatement(path) {
         // 替换computed的return为setData
-        const methodComputedReturnsPath = path.findParent(i => methodComputed.includes(i.node))
+        const methodComputedReturnsPath = path.findParent(i => methodComputed ? methodComputed.includes(i.node) : false)
         if (methodComputedReturnsPath) {
           if (path.node.$computedReturnIsReady) {
             return
@@ -175,9 +180,7 @@ function compileScript() {
 
 
   const output = generator.default(ast);
-  debugger
-  writeFileSync('./tttttttt.js', output)
-  debugger
+  return output.code
 }
 class VueDataWatcher {
   constructor(vueDataReturnProps) {
@@ -246,5 +249,4 @@ class VueDataWatcher {
     })
   }
 }
-compileScript()
 
