@@ -9,7 +9,14 @@ function computedCallName(name) {
   return `__computed__${name}`
 }
 function getThisPathNextMemberKey(path) {
-  return path.getNextSibling().parent.property.name
+  try {
+    if (!path.getNextSibling().parent.property) return null
+    return path.getNextSibling().parent.property.name
+  } catch (error) {
+    console.log(error)
+    console.log('getThisPathNextMemberKey err loc-->', path.node.loc)
+    throw error
+  }
 }
 /**
  * 检查当前的this是否可替换为this.data
@@ -45,7 +52,12 @@ function replaceThisToThisData(path) {
   path.replaceWith(types.memberExpression(types.thisExpression(), types.identifier('data')))
 }
 function getObjKeys(node) {
-  return node.value.properties.map(node => node.key.name)
+  try {
+    return node?.value?.properties?.map(node => node.key.name) || []
+  } catch (error) {
+    // console.log('getObjKeys err->', node.loc)
+    throw error
+  }
 }
 // 检查当前的path是否vue里的为this.xxx = xxx里的this
 function checkIsVueDataAssignmentForThisPath(path) {
@@ -58,10 +70,9 @@ function checkIsVueDataAssignmentForThisPath(path) {
   }
   return null
 }
-export function compileVueScript() {
-  const blockShouldUpdateComputedMap = new Map()
+export function compileVueScript(content) {
   const dataMap = new Map()
-  const content = readFileSync('D:/test/scriptAst.js', 'utf-8')
+  // content = readFileSync('D:/test/scriptAst.js', 'utf-8')
   const ast = parse(content, {
     sourceType: 'module'
   });
@@ -71,21 +82,37 @@ export function compileVueScript() {
   if (exportDefault) {
     const exportProps = exportDefault.declaration.properties
     const lifetimesAst = types.objectProperty(types.identifier('lifetimes'), 
-      types.objectExpression([types.objectMethod('method', types.identifier('attached'), [], types.blockStatement([]))])
+      types.objectExpression([types.objectMethod('method', types.identifier('attached'), [], types.blockStatement([]), false, false, true)])
     )
     exportProps.push(lifetimesAst)
+    
     const vueData = exportProps.find(i => i.key.name === 'data')
     const vueComponents = exportProps.find(i => i.key.name === 'components')
-    const vueMethods = exportProps.find(i => i.key.name === 'methods')
+    let vueMethods = exportProps.find(i => i.key.name === 'methods')
     const vueCreatedHook = exportProps.find(i => i.key.name === 'created')
-    const vueDataReturn = vueData.body.body.find(i => i.type === 'ReturnStatement')
-    const vueDataReturnProps = vueDataReturn?.argument?.properties
-    const vueDataWatcher = new VueDataWatcher(vueDataReturnProps)
+    const vueMountedHook = exportProps.find(i => i.key.name === 'mounted')
+    const vueWatch = exportProps.find(i => i.key.name === 'watch')
+    let vueProps = exportProps.find(i => i.key.name === 'props')
+    const vueDataReturn = vueData?.body?.body.find(i => i.type === 'ReturnStatement')
+    const vueDataReturnProps = vueDataReturn?.argument?.properties || []
+    if (vueProps?.value.type === 'ArrayExpression') {
+      const nextProps = types.objectExpression(vueProps.value.elements.map(el => {
+        // el.value
+        return types.objectProperty(types.identifier(el.value), types.objectExpression([]))
+      }))
+      vueProps.value = nextProps
+    }
+    const vueDataWatcher = new VueDataWatcher(vueDataReturnProps, vueProps)
+    
     vueDataReturnProps.forEach(returnPropItem => {
       dataMap.set(returnPropItem.key.name, [])
     })
     const vueComputed = exportProps.find(i => i.key.name === 'computed')
-    const methodComputed = vueComputed.value.properties.filter(i => i.type === 'ObjectMethod')
+    if (vueComputed && !vueMethods) {
+      vueMethods = types.objectProperty(types.identifier('methods'), types.objectExpression([]))
+      exportProps.push(vueMethods)
+    }
+    const methodComputed = vueComputed?.value?.properties?.filter(i => i.type === 'ObjectMethod') || []
     methodComputed.forEach(node => {
       vueDataReturnProps.push(types.objectProperty(types.identifier(node.key.name), types.nullLiteral()))
     })
@@ -117,11 +144,14 @@ export function compileVueScript() {
             !replaceThisPathList.includes(path) && replaceThisPathList.push(path)
           }
           vueDataWatcher.listenVueDataChangeInComputed(path)
+          vueDataWatcher.listenVuePropChangeInComputed(path)
         } else if (path.findParent(path => {
-          if (vueMethods) return path.node === vueMethods
-          if (vueCreatedHook) return path.node === vueCreatedHook
-          // [vueMethods, vueCreatedHook].includes(path.node)
-          return false
+          const dataChange = []
+          if (vueMethods) return dataChange.push(vueMethods)
+          if (vueCreatedHook) return dataChange.push(vueCreatedHook)
+          if (vueMountedHook) return dataChange.push(vueMountedHook)
+          if (vueWatch) return path.node === vueWatch
+          return dataChange.includes(path.node)
         })) {
           // this赋值处理，当前的path为this
           const thisAssignmentExpressionPath = checkIsVueDataAssignmentForThisPath(path)
@@ -159,7 +189,14 @@ export function compileVueScript() {
     vueDataAssignmentExpressionPathList.forEach((path) => assignmentExpressionToSetData(path))
     traverse(ast, {
       ThisExpression(path) {
-        if (path.findParent(path => [vueCreatedHook, vueMethods].includes(path.node)) && checkThisCanReplace(path, getObjKeys(vueMethods))) {
+        if (path.findParent(path => {
+          const dataChange = []
+          if (vueMethods) return dataChange.push(vueMethods)
+          if (vueCreatedHook) return dataChange.push(vueCreatedHook)
+          if (vueMountedHook) return dataChange.push(vueMountedHook)
+          if (vueWatch) return path.node === vueWatch
+          return dataChange.includes(path.node)
+        }) && checkThisCanReplace(path, getObjKeys(vueMethods))) {
           !replaceThisPathList.includes(path) && replaceThisPathList.push(path)
         }
       }
@@ -175,21 +212,63 @@ export function compileVueScript() {
       }).program.body[0]
       attachedScope.body.body.push(computedCallAst)
     })
+    const vueInitHooksScope = []
+    if (vueCreatedHook) {
+      vueInitHooksScope.push(...vueCreatedHook.body.body)
+      exportProps.splice(exportProps.findIndex(i => i.key.name === 'created'), 1)
+    }
+    if (vueMountedHook) {
+      vueInitHooksScope.push(...vueMountedHook.body.body)
+      exportProps.splice(exportProps.findIndex(i => i.key.name === 'mounted'), 1)
+    }
+    lifetimesAst.value.properties[0].body.body.push(...vueInitHooksScope)
+    transferPropAst(vueProps)
+    if (vueComputed) {
+      exportProps.splice(exportProps.findIndex(i => i.key.name === 'computed'), 1)
+    }
     // const vueData = [...methodProps].find(i => i.key.name === 'data')
   }
-
 
   const output = generator.default(ast);
   return output.code
 }
+function transferPropAst(vueProp) {
+  if (vueProp) {
+    vueProp.value.properties.forEach(node => {
+      if (node.value.type === 'ObjectExpression') {
+        const propProp = node.value.properties
+        const defaultNode = propProp.find(i => i.key.name === 'default')
+        if (defaultNode) {
+          defaultNode.key.name = 'value'
+          if (['ArrowFunctionExpression', 'FunctionExpression'].includes(defaultNode.value.type)) {
+            if (defaultNode.value.body.body) {
+              const returnNode = defaultNode.value.body.body.find(i => i.type === 'ReturnStatement')?.argument
+              defaultNode.value = returnNode
+            } else {
+              defaultNode.value = defaultNode.value.body
+            }
+          }
+        }
+      }
+    })
+    vueProp.key.name = 'properties'
+  }
+}
 class VueDataWatcher {
-  constructor(vueDataReturnProps) {
+  constructor(vueDataReturnProps, vueProps) {
     this.vueDataUpdateBlock = new Map()
     this.vueDataSubscribeMap = new Map()
     this.blockShouldCallMap = new Map()
+    this.vuePropSubscribeMap = new Map()
+    this.vueProps = vueProps
     vueDataReturnProps.forEach(returnPropItem => {
       this.vueDataSubscribeMap.set(returnPropItem.key.name, [])
     })
+    if (vueProps) {
+      vueProps.value.properties.forEach(propNode => {
+        this.vuePropSubscribeMap.set(propNode.key.name, [])
+      })
+    }
   }
   /**
    * 
@@ -198,6 +277,7 @@ class VueDataWatcher {
    */
   listenVueDataChangeInComputed(thisPath) {
     let useVueDataKey = getThisPathNextMemberKey(thisPath)
+    if (useVueDataKey === null) return
     const isBindName =  computedCallName(useVueDataKey)
     const vueDataScribeList = this.vueDataSubscribeMap.get(useVueDataKey)
     if (vueDataScribeList) {
@@ -208,6 +288,21 @@ class VueDataWatcher {
       }).program.body[0]
       callAst.__uniKey__ = isBindName
       vueDataScribeList.push(callAst)
+    }
+  }
+  listenVuePropChangeInComputed(thisPath) {
+    let useVuePropKey = getThisPathNextMemberKey(thisPath)
+    if (useVuePropKey === null) return
+    const isBindName =  computedCallName(useVuePropKey)
+    const vuePropsScribeList = this.vuePropSubscribeMap.get(useVuePropKey)
+    if (vuePropsScribeList) {
+      if (vuePropsScribeList.find(i => i.__uniKey__ === isBindName)) return
+      const callExpressionStr = `this.${isBindName}()`
+      const callAst = parse(callExpressionStr, {
+        sourceType: 'script'
+      }).program.body[0]
+      callAst.__uniKey__ = isBindName
+      vuePropsScribeList.push(callAst)
     }
   }
   /**
@@ -222,6 +317,7 @@ class VueDataWatcher {
     if (vueDataAssignmentExpressionPath && vueDataAssignmentExpressionPath.type === 'AssignmentExpression') {
       // 赋值的data key
       const assignmentKey = getThisPathNextMemberKey(thisPath)
+      if (assignmentKey === null) return
       const vueDataScribeList = this.vueDataSubscribeMap.get(assignmentKey)
       // 有订阅了vue data的才需要更新
       if (vueDataScribeList?.length) {
@@ -247,6 +343,16 @@ class VueDataWatcher {
       const insertBeforeNodeIndex = blockStatement.node.body.findLastIndex(node => node.type !== 'ReturnStatement')
       blockStatement.node.body.splice(insertBeforeNodeIndex + 1, 0, ...shouldBeCallAstList)
     })
+    if (this.vueProps) {
+      this.vuePropSubscribeMap.forEach((shouldBeCallAstList, propKey) => {
+        if (shouldBeCallAstList?.length) {
+          const propNode = this.vueProps.value.properties.find(i => i.key.name === propKey)
+          if (propNode && propNode.value.type === 'ObjectExpression') {
+            propNode.value.properties.push(types.objectMethod('method', types.identifier('observer'), [], types.blockStatement(shouldBeCallAstList)))
+          }
+        }
+      })
+    }
   }
 }
-
+// compileVueScript()
