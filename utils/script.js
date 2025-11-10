@@ -143,8 +143,15 @@ export function compileVueScript(content) {
           if (path.findParent(path => methodComputed.includes(path.node)) && checkThisCanReplace(path, getObjKeys(vueMethods))) {
             !replaceThisPathList.includes(path) && replaceThisPathList.push(path)
           }
-          vueDataWatcher.listenVueDataChangeInComputed(path)
-          vueDataWatcher.listenVuePropChangeInComputed(path)
+          // const computedPath = path.findParent(path => path.node === vueComputed)
+          const fMethodItem = methodComputed.find(methodItem => {
+            return path.findParent(p => p.node === methodItem)
+          })
+          if (fMethodItem) {
+            vueDataWatcher.listenVueDataChangeInComputed(path, fMethodItem)
+            vueDataWatcher.listenVuePropChangeInComputed(path, fMethodItem)
+          }
+          
         } else if (path.findParent(path => {
           const dataChange = []
           if (vueMethods) return dataChange.push(vueMethods)
@@ -275,10 +282,10 @@ class VueDataWatcher {
    * @param {NodePath<types.Node>} path 
    * @param {'computed'} type 
    */
-  listenVueDataChangeInComputed(thisPath) {
+  listenVueDataChangeInComputed(thisPath, fMethodItem) {
     let useVueDataKey = getThisPathNextMemberKey(thisPath)
     if (useVueDataKey === null) return
-    const isBindName =  computedCallName(useVueDataKey)
+    const isBindName =  computedCallName(fMethodItem.key.name)
     const vueDataScribeList = this.vueDataSubscribeMap.get(useVueDataKey)
     if (vueDataScribeList) {
       if (vueDataScribeList.find(i => i.__uniKey__ === isBindName)) return
@@ -290,10 +297,10 @@ class VueDataWatcher {
       vueDataScribeList.push(callAst)
     }
   }
-  listenVuePropChangeInComputed(thisPath) {
+  listenVuePropChangeInComputed(thisPath, fMethodItem) {
     let useVuePropKey = getThisPathNextMemberKey(thisPath)
     if (useVuePropKey === null) return
-    const isBindName =  computedCallName(useVuePropKey)
+    const isBindName =  computedCallName(fMethodItem.key.name)
     const vuePropsScribeList = this.vuePropSubscribeMap.get(useVuePropKey)
     if (vuePropsScribeList) {
       if (vuePropsScribeList.find(i => i.__uniKey__ === isBindName)) return

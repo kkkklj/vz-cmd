@@ -357,10 +357,9 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw, isVmin = false
         if (miniVanNoSupport.includes(name)) return
         path = `@vant/weapp/${name.replace(/^van\-/, '')}/index`
       } else {
-        name = name.replace(/\-[a-z]/g, val => {
+        path = compMap.get(name.replace(/\-[a-z]/g, val => {
           return val[1].toUpperCase()
-        })
-        path = compMap.get(name)
+        }))
       }
       
       if (path) {
@@ -377,7 +376,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw, isVmin = false
     states,
     methods,
     components: _components,
-    scriptContent: script.content
+    scriptContent: script.content,
   }
 }
 /**
@@ -425,7 +424,7 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
   writeFile(wxFilePath('wxml'), wxml)
   writeFile(wxFilePath('wxss'), wxss)
   writeFile(wxFilePath('json'), wxJson(components))
-  writeFile(wxFilePath('ts'), wxJs(scriptContent))
+  writeFile(wxFilePath('ts'), wxJs(scriptContent, path))
 }
 export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')
