@@ -424,7 +424,7 @@ export const createComponentFiles = async (path, compMap, outputPath, px2rpx, re
   writeFile(wxFilePath('wxml'), wxml)
   writeFile(wxFilePath('wxss'), wxss)
   writeFile(wxFilePath('json'), wxJson(components))
-  writeFile(wxFilePath('ts'), wxJs(scriptContent, path))
+  writeFile(wxFilePath('js'), wxJs(scriptContent, path))
 }
 export const tempDebug = async () => {
   createComponentFiles('D:/test/PromotionBanner.vue', null, 'D:/test/output/PromotionBanner.vue')

@@ -95,7 +95,7 @@ export function compileVueScript(content) {
     let vueProps = exportProps.find(i => i.key.name === 'props')
     const vueDataReturn = vueData?.body?.body.find(i => i.type === 'ReturnStatement')
     const vueDataReturnProps = vueDataReturn?.argument?.properties || []
-    if (vueProps?.value.type === 'ArrayExpression') {
+    if (vueProps?.value.type === 'ArrayExpression') { // 数组prop改成对象
       const nextProps = types.objectExpression(vueProps.value.elements.map(el => {
         // el.value
         return types.objectProperty(types.identifier(el.value), types.objectExpression([]))
@@ -250,7 +250,7 @@ function transferPropAst(vueProp) {
           if (['ArrowFunctionExpression', 'FunctionExpression'].includes(defaultNode.value.type)) {
             if (defaultNode.value.body.body) {
               const returnNode = defaultNode.value.body.body.find(i => i.type === 'ReturnStatement')?.argument
-              defaultNode.value = returnNode
+              defaultNode.value = returnNode || types.objectExpression([])
             } else {
               defaultNode.value = defaultNode.value.body
             }

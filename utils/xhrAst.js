@@ -64,7 +64,7 @@ function transferFunctionAst(path) {
       if (!node.arguments || !node.arguments.length) {
         debugger
       }
-      const nextArgs = [requestPath, requestParams, types.identifier(requestMethod)]
+      const nextArgs = [requestPath, requestParams, types.stringLiteral(requestMethod)]
       if (requestOptions) {
         nextArgs.push(requestOptions)
       }
