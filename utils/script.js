@@ -25,7 +25,7 @@ function checkThisCanReplace(path, whiteList) {
   if (!path.parent.property) return false
   if (whiteList && whiteList.includes(path.parent.property.name)) return false
   if (/^__computed__/.test(path.parent.property.name)) return false
-  if (['setData', '$route', '$toast'].includes(path.parent.property.name)) {
+  if (['setData', '$route', '$toast', '$emit'].includes(path.parent.property.name)) {
     return false
   }
   return true
@@ -206,7 +206,7 @@ export function compileVueScript(content) {
         }) && checkThisCanReplace(path, getObjKeys(vueMethods))) {
           !replaceThisPathList.includes(path) && replaceThisPathList.push(path)
         }
-      }
+      },
     })
     replaceThisPathList.forEach(path => replaceThisToThisData(path))
     const attachedScope = lifetimesAst.value.properties.find(i => i.key.name === 'attached')
@@ -233,6 +233,14 @@ export function compileVueScript(content) {
     if (vueComputed) {
       exportProps.splice(exportProps.findIndex(i => i.key.name === 'computed'), 1)
     }
+    traverse(ast, {
+      CallExpression(path) {
+        const callee = path.node.callee
+        if (callee.type === 'MemberExpression' && callee.object.type === 'ThisExpression' && callee.property.name === '$emit') {
+          callee.property.name = 'triggerEvent'
+        }
+      }
+    })
     // const vueData = [...methodProps].find(i => i.key.name === 'data')
   }
 
