@@ -1,6 +1,15 @@
 import { compileVueScript } from "../utils/script.js"
 
-export const wxJs = (...arg) =>  compileVueScript(...arg)
+export const wxJs = (...arg) =>  {
+  try {
+    return compileVueScript(...arg)
+  } catch (error) {
+    console.log('err->', error)
+    return `Component({
+  data: {}
+})`
+  }
+}
 /**
  * 
  * @param {{path:string, name: string}[]} components 
