@@ -17,6 +17,8 @@ import { wxml3Compiler } from './utils/wxml2.js';
 import { createComponentFiles } from './utils/wxCompiler.js';
 import { batchVmim, compilerVueComponents } from './utils/batchCompiler.js';
 import { batchCreateBranch, batchDelBranch, getGitBranch, gitMerge } from './utils/git.js';
+import { compileXhr } from './utils/xhrAst.js';
+import { replaceWindowZbvd } from './utils/astTest.js';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -458,4 +460,15 @@ program.command('branch')
 //     batchCreateBranch()
 // })
 
+program.command('vzanliveXhr')
+.argument('[args...]', 'args')
+.action(args => {
+    compileXhr(args[0])
+})
+
+program.command('windowZbvd')
+.argument('[args...]', 'args')
+.action(args => {
+    replaceWindowZbvd(args[0])
+})
 program.parse();
