@@ -119,6 +119,23 @@ export function compileVueScript(content) {
     // type === ThisExpression
     
     const wxData = types.objectProperty(types.identifier('data'), types.objectExpression(vueDataReturnProps))
+    const functionExpressionsInComputed = []
+    const checkIsFunctionExpressionsInComputed = path => {
+      if (path.findParent(i => methodComputed ? methodComputed.includes(i.node) : false)) {
+        functionExpressionsInComputed.push(path)
+      }
+    }
+    traverse(ast, {
+      FunctionExpression(path) {
+        checkIsFunctionExpressionsInComputed(path)
+      },
+      ArrowFunctionExpression(path) {
+        checkIsFunctionExpressionsInComputed(path)
+      },
+      FunctionDeclaration(path) {
+        checkIsFunctionExpressionsInComputed(path)
+      }
+    })
     traverse(ast, {
       enter(path) {
         if (path.node === exportDefault) {
@@ -177,6 +194,7 @@ export function compileVueScript(content) {
           if (path.node.$computedReturnIsReady) {
             return
           }
+          if (path.findParent(i => functionExpressionsInComputed.includes(i))) return
           const nReturn = types.returnStatement(
              types.callExpression(types.memberExpression(
                 types.thisExpression(),
