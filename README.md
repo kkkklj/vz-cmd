@@ -1,5 +1,4 @@
 # 命令行工具
-
 [![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/kkkklj/vz-cmd)
 
 安装：npm i -g vz-cmd
@@ -21,7 +20,7 @@ vz git [options] [args...]
 例子
 ```shell
 # -ps 推送所有更改
-vz git -ps "fix: 改了个bug" .
+vz git -ps "fix: 改了个bug"
 # -mgt 将当前分支合并进test和dev
 vz git -mgt test dev
 ```
@@ -76,7 +75,7 @@ vz wx2Vmin file [-a]
 
 ### vue2wx 命令（采用vue3的编译器，可以编译整个文件了）
 
-用于将整个vue文件转换为微信小程序组件，如果参数是目录，将会批量转换目录中的vue文件并生成小程序组件目录
+用于将整个vue文件转换为微信小程序组件，如果参数是目录，将会批量转换目录中的vue文件并生成小程序组件目录。支持将vue的options api转换为小程序的语法，暂不支持composition api的转换
 
 vz vue2wx [files...] [--bashUrl] [--px2rpx] [--rem2rpx] [--vmin]
 
