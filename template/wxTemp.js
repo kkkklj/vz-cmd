@@ -1,13 +1,17 @@
 import { compileVueScript } from "../utils/script.js"
-
+const defaultWxJs = `Component({
+  data: {}
+})`
 export const wxJs = (...arg) =>  {
   try {
+    if (![...arg][0]) {
+      console.log('缺少script或script为setup')
+      return defaultWxJs
+    }
     return compileVueScript(...arg)
   } catch (error) {
     console.log('err->', error)
-    return `Component({
-  data: {}
-})`
+    return defaultWxJs
   }
 }
 /**

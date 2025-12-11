@@ -376,7 +376,7 @@ const compileVueFile = async (path, compMap, px2rpx, rem2rpx, sw, isVmin = false
     states,
     methods,
     components: _components,
-    scriptContent: script.content,
+    scriptContent: script?.content,
   }
 }
 /**
