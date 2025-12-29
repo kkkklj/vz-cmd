@@ -19,6 +19,7 @@ import { batchVmim, compilerVueComponents } from './utils/batchCompiler.js';
 import { batchCreateBranch, batchDelBranch, getGitBranch, gitMerge } from './utils/git.js';
 import { compileXhr } from './utils/xhrAst.js';
 import { replaceWindowZbvd } from './utils/astTest.js';
+import { fileURLToPath } from 'node:url';
 const processExec = (cmd) => {
     return new Promise((resolve,reject) => {
         _process.exec(cmd, (error, stdout, stderr) => {
@@ -30,9 +31,16 @@ const processExec = (cmd) => {
           })
     })
 }
+let version = '0.0.1'
+try {
+    const __filename = fileURLToPath(import.meta.url);
+    version = JSON.parse(readFileSync(__filename.replace(/index\.js$/, 'package.json'), 'utf-8')).version
+} catch (error) {
+    console.log('err->', error)
+}
 const program = new Command();
 program
-  .version('0.0.1')
+  .version(version)
   .description('A cli application named pro');
 
 const gitPush = async (commit, addList) => {
